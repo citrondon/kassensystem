@@ -52,6 +52,19 @@ INSERT INTO products (name, barcode, price, stock, category_id, low_stock_thresh
     ('Eier 10er',   '4000000078901', 3.29, 30,  5, 10)
 ON CONFLICT (name) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS users (
+    id            SERIAL PRIMARY KEY,
+    username      VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role          VARCHAR(50) NOT NULL DEFAULT 'cashier',
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO users (username, password_hash, role) VALUES
+    ('admin', '$2b$10$zDk6cOB3pUV3WhbbRVIPx.qHjJ4Un5qrnxtoDEMvhqkTp3LVpc13S', 'manager'),
+    ('kasse', '$2b$10$zDk6cOB3pUV3WhbbRVIPx.qHjJ4Un5qrnxtoDEMvhqkTp3LVpc13S', 'cashier')
+ON CONFLICT (username) DO NOTHING;
+
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date DESC);
