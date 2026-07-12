@@ -16,7 +16,10 @@ export interface JwtPayload {
   role: "manager" | "cashier";
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET Umgebungsvariable muss gesetzt sein.");
+}
 const JWT_EXPIRES_IN = "8h";
 
 export const login = async (req: Request, res: Response): Promise<void> => {
