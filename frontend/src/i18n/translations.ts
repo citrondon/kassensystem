@@ -134,6 +134,12 @@ export const translations = {
     hourlyDistribution: "Distribution horaire",
     loadingCharts: "Chargement des graphiques...",
     noChartData: "Aucune donnée disponible pour les graphiques.",
+    online: "En ligne",
+    offline: "Hors ligne",
+    offlineMode: "Mode hors ligne — ventes enregistrées localement.",
+    orderSavedOffline: "Vente enregistrée hors ligne. {count} en attente de sync.",
+    ordersSynced: "{count} vente(s) hors ligne synchronisée(s).",
+    pendingOrders: "en attente de sync",
   },
   de: {
     appTitle: "Kassensystem",
@@ -268,6 +274,12 @@ export const translations = {
     hourlyDistribution: "Stündliche Verteilung",
     loadingCharts: "Diagramme werden geladen...",
     noChartData: "Keine Daten für Diagramme verfügbar.",
+    online: "Online",
+    offline: "Offline",
+    offlineMode: "Offline-Modus — Verkäufe werden lokal gespeichert.",
+    orderSavedOffline: "Verkauf offline gespeichert. {count} wartet auf Sync.",
+    ordersSynced: "{count} offline Verkauf(e) synchronisiert.",
+    pendingOrders: "wartet auf Sync",
   },
 } as const;
 
