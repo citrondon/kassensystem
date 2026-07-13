@@ -32,6 +32,7 @@ const EMPTY_FORM = {
   low_stock_threshold: "5",
   category: "",
   image_path: "" as string,
+  barcode: "" as string,
 };
 
 export default function InventoryScreen() {
@@ -71,6 +72,7 @@ export default function InventoryScreen() {
       low_stock_threshold: product.low_stock_threshold?.toString() ?? "5",
       category: product.category ?? "",
       image_path: product.image_path ?? "",
+      barcode: product.barcode ?? "",
     });
     setModalVisible(true);
   }
@@ -114,6 +116,7 @@ export default function InventoryScreen() {
     const lowStock = parseInt(form.low_stock_threshold, 10) ?? 5;
     const category = form.category.trim() || null;
     const imagePath = form.image_path.trim() || null;
+    const barcode = form.barcode.trim() || null;
 
     if (editingProduct) {
       await updateProduct(editingProduct.id, {
@@ -125,6 +128,7 @@ export default function InventoryScreen() {
         low_stock_threshold: lowStock,
         category,
         image_path: imagePath,
+        barcode,
       });
     } else {
       await addProduct(
@@ -135,7 +139,7 @@ export default function InventoryScreen() {
         form.unit,
         costPrice,
         lowStock,
-        null,
+        barcode,
         imagePath
       );
     }
@@ -319,6 +323,15 @@ export default function InventoryScreen() {
                 placeholder="z. B. Getränke"
                 value={form.category}
                 onChangeText={(text) => updateField("category", text)}
+              />
+
+              <Text style={styles.modalLabel}>Barcode (optional)</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="z. B. 3017620422003"
+                value={form.barcode}
+                onChangeText={(text) => updateField("barcode", text)}
+                autoCapitalize="none"
               />
             </ScrollView>
 

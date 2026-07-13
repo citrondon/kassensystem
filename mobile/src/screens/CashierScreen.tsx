@@ -10,7 +10,7 @@ import {
   Modal,
   Image,
 } from "react-native";
-import { getProducts, checkout, checkoutOnCredit, getCustomers, addCustomer, getSetting, Product, CheckoutItem, Customer } from "../db/queries";
+import { getProducts, checkout, checkoutOnCredit, getCustomers, addCustomer, getSetting, getProductByBarcode, Product, CheckoutItem, Customer } from "../db/queries";
 import { formatCFA } from "../utils/format";
 import * as Speech from "expo-speech";
 
@@ -35,6 +35,8 @@ export default function CashierScreen() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [showBarcodeInput, setShowBarcodeInput] = useState(false);
+  const [barcodeValue, setBarcodeValue] = useState("");
 
   useEffect(() => {
     loadProducts();
@@ -193,16 +195,44 @@ export default function CashierScreen() {
     await doCreditCheckout(id, newCustomerName.trim());
   }
 
+  async function handleBarcodeLookup() {
+    const code = barcodeValue.trim();
+    if (!code) return;
+    const product = await getProductByBarcode(code);
+    setShowBarcodeInput(false);
+    setBarcodeValue("");
+    if (product) {
+      openQtyPopup(product);
+    } else {
+      Alert.alert(
+        "Unbekannter Barcode",
+        `Kein Produkt mit Barcode "${code}" gefunden. Im Lager anlegen?`,
+        [
+          { text: "Abbrechen", style: "cancel" },
+          { text: "OK", style: "default" },
+        ]
+      );
+    }
+  }
+
   return (
     <View style={styles.container}>
       {/* Suchleiste + Sonderbetrag */}
       <View style={styles.topBar}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Produkt suchen..."
-          value={search}
-          onChangeText={setSearch}
-        />
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Produkt suchen..."
+            value={search}
+            onChangeText={setSearch}
+          />
+          <TouchableOpacity
+            style={styles.scanBtn}
+            onPress={() => setShowBarcodeInput(true)}
+          >
+            <Text style={styles.scanBtnText}>📷</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Produktkacheln */}
@@ -433,6 +463,39 @@ export default function CashierScreen() {
         </View>
       </Modal>
 
+      {/* Barcode Input Modal */}
+      <Modal visible={showBarcodeInput} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Barcode scannen</Text>
+            <Text style={styles.modalLabel}>Barcode eingeben</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="z. B. 3017620422003"
+              value={barcodeValue}
+              onChangeText={setBarcodeValue}
+              keyboardType="numeric"
+              autoFocus
+              onSubmitEditing={handleBarcodeLookup}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => {
+                  setShowBarcodeInput(false);
+                  setBarcodeValue("");
+                }}
+              >
+                <Text style={styles.modalCancelText}>Abbrechen</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirm} onPress={handleBarcodeLookup}>
+                <Text style={styles.modalConfirmText}>Suchen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Mengen-Pop-up Modal */}
       <Modal visible={qtyProduct !== null} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -504,13 +567,24 @@ export default function CashierScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f3f4f6" },
   topBar: { padding: 12, backgroundColor: "#fff" },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   searchInput: {
+    flex: 1,
     borderWidth: 1,
     borderColor: "#d1d5db",
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
   },
+  scanBtn: {
+    backgroundColor: "#0f766e",
+    borderRadius: 8,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scanBtnText: { fontSize: 20 },
   productGrid: { padding: 8 },
   productTile: {
     flex: 1,
