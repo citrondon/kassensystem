@@ -188,3 +188,33 @@ export async function getTopProducts(date?: string, limit?: number): Promise<Top
   if (!res.ok) throw new Error("Fehler beim Abrufen der Top-Produkte.");
   return res.json();
 }
+
+export interface SalesOverTimeRow {
+  date: string;
+  total_orders: number;
+  net_amount: string;
+}
+
+export interface PeakHoursRow {
+  hour: number;
+  total_orders: number;
+  net_amount: string;
+}
+
+export async function getSalesOverTime(days?: number): Promise<SalesOverTimeRow[]> {
+  const url = days
+    ? `${API_BASE}/reports/sales-over-time?days=${days}`
+    : `${API_BASE}/reports/sales-over-time`;
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Umsatzkurve.");
+  return res.json();
+}
+
+export async function getPeakHours(date?: string): Promise<PeakHoursRow[]> {
+  const url = date
+    ? `${API_BASE}/reports/peak-hours?date=${date}`
+    : `${API_BASE}/reports/peak-hours`;
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Stoßzeiten.");
+  return res.json();
+}
