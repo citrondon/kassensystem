@@ -10,8 +10,9 @@ import {
   Modal,
   Image,
 } from "react-native";
-import { getProducts, checkout, checkoutOnCredit, getCustomers, addCustomer, Product, CheckoutItem, Customer } from "../db/queries";
+import { getProducts, checkout, checkoutOnCredit, getCustomers, addCustomer, getSetting, Product, CheckoutItem, Customer } from "../db/queries";
 import { formatCFA } from "../utils/format";
+import * as Speech from "expo-speech";
 
 const CFA_DENOMS = [100, 500, 1000, 2000, 5000, 10000];
 
@@ -145,6 +146,15 @@ export default function CashierScreen() {
     setCart([]);
     setDiscount("");
     await loadProducts();
+
+    // TTS: speak change amount
+    const ttsEnabled = await getSetting("tts_enabled");
+    if (ttsEnabled !== "0" && result.changeAmount > 0) {
+      Speech.speak(`Rückgeld: ${result.changeAmount} Francs CFA`, {
+        language: "fr",
+        rate: 0.9,
+      });
+    }
   }
 
   async function openCreditPicker() {
