@@ -107,3 +107,89 @@ export const getTopProducts = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ success: false, error: "Fehler beim Abrufen der Top-Produkte." });
   }
 };
+
+export interface SalesOverTimeRow {
+  date: string;
+  total_orders: number;
+  net_amount: number;
+}
+
+/**
+ * Get daily sales totals for the last N days (for line chart).
+ * @param req.query.days - Number of days to look back (default: 7, max: 90)
+ * @returns 200 with `SalesOverTimeRow[]` or 500
+ */
+export const getSalesOverTime = async (req: Request, res: Response): Promise<void> => {
+  const days = Math.min(Number(req.query.days) || 7, 90);
+
+  try {
+    const result = await pool.query<SalesOverTimeRow>(
+      `SELECT
+         DATE(o.order_date)::text AS date,
+         COUNT(*)::int AS total_orders,
+         COALESCE(SUM(o.total_amount), 0)::numeric AS net_amount
+       FROM orders o
+       WHERE o.order_date >= CURRENT_DATE - ($1::int - 1)
+       AND o.status = 'completed'
+       GROUP BY DATE(o.order_date)
+       ORDER BY DATE(o.order_date) ASC`,
+      [days]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching sales over time:", error);
+    res.status(500).json({ success: false, error: "Fehler beim Abrufen der Umsatzkurve." });
+  }
+};
+
+export interface PeakHoursRow {
+  hour: number;
+  total_orders: number;
+  net_amount: number;
+}
+
+/**
+ * Get order count and revenue by hour of day (for a given date or last 7 days).
+ * @param req.query.date - Date in YYYY-MM-DD format (optional, defaults to last 7 days)
+ * @returns 200 with `PeakHoursRow[]` (0-23 hours) or 500
+ */
+export const getPeakHours = async (req: Request, res: Response): Promise<void> => {
+  const dateParam = (req.query.date as string | undefined)?.trim();
+
+  try {
+    let result;
+    if (dateParam) {
+      result = await pool.query<PeakHoursRow>(
+        `SELECT
+           EXTRACT(HOUR FROM o.order_date)::int AS hour,
+           COUNT(*)::int AS total_orders,
+           COALESCE(SUM(o.total_amount), 0)::numeric AS net_amount
+         FROM orders o
+         WHERE DATE(o.order_date) = $1::date
+         AND o.status = 'completed'
+         GROUP BY EXTRACT(HOUR FROM o.order_date)
+         ORDER BY hour ASC`,
+        [dateParam]
+      );
+    } else {
+      result = await pool.query<PeakHoursRow>(
+        `SELECT
+           EXTRACT(HOUR FROM o.order_date)::int AS hour,
+           COUNT(*)::int AS total_orders,
+           COALESCE(SUM(o.total_amount), 0)::numeric AS net_amount
+         FROM orders o
+         WHERE o.order_date >= CURRENT_DATE - 6
+         AND o.status = 'completed'
+         GROUP BY EXTRACT(HOUR FROM o.order_date)
+         ORDER BY hour ASC`,
+        []
+      );
+    }
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching peak hours:", error);
+    res.status(500).json({ success: false, error: "Fehler beim Abrufen der Stoßzeiten." });
+  }
+};
