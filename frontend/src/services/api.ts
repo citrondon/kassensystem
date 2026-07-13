@@ -147,3 +147,44 @@ export async function getOrderById(id: number): Promise<OrderDetail> {
   if (!res.ok) throw new Error("Fehler beim Abrufen der Bestellung");
   return res.json();
 }
+
+export interface DailyReport {
+  date: string;
+  total_orders: number;
+  gross_amount: string;
+  discount_amount: string;
+  net_amount: string;
+  cash_orders: number;
+  card_orders: number;
+  other_orders: number;
+  cash_amount: string;
+  card_amount: string;
+  other_amount: string;
+}
+
+export interface TopProduct {
+  product_id: number;
+  product_name: string;
+  quantity_sold: number;
+  revenue: string;
+}
+
+export async function getDailyReport(date?: string): Promise<DailyReport> {
+  const url = date
+    ? `${API_BASE}/reports/daily?date=${date}`
+    : `${API_BASE}/reports/daily`;
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Fehler beim Abrufen des Tagesberichts.");
+  return res.json();
+}
+
+export async function getTopProducts(date?: string, limit?: number): Promise<TopProduct[]> {
+  const params = new URLSearchParams();
+  if (date) params.set("date", date);
+  if (limit) params.set("limit", String(limit));
+  const qs = params.toString();
+  const url = qs ? `${API_BASE}/reports/top-products?${qs}` : `${API_BASE}/reports/top-products`;
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Top-Produkte.");
+  return res.json();
+}

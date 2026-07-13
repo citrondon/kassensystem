@@ -6,10 +6,11 @@ import Dashboard from "./components/Dashboard";
 import CashierInterface from "./components/CashierInterface";
 import InventoryOverview from "./components/InventoryOverview";
 import OrdersView from "./components/OrdersView";
+import ReportsView from "./components/ReportsView";
 import LoginView from "./components/LoginView";
 import Header from "./components/Header";
 
-type View = "dashboard" | "cashier" | "inventory" | "orders";
+type View = "dashboard" | "cashier" | "inventory" | "orders" | "reports";
 
 function AppContent() {
   const [view, setView] = useState<View>("dashboard");
@@ -41,6 +42,7 @@ function AppContent() {
           {view === "cashier" && <CashierInterface />}
           {view === "inventory" && <InventoryOverview />}
           {view === "orders" && <OrdersView />}
+          {view === "reports" && <ReportsView />}
         </main>
       </div>
       <MobileNav active={view} onChange={setView} />

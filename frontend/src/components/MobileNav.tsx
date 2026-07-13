@@ -1,43 +1,49 @@
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, ClipboardList, BarChart3 } from "lucide-react";
 import { useI18n } from "../i18n/I18nContext";
+import { useAuth } from "../contexts/AuthContext";
 
-type View = "dashboard" | "cashier" | "inventory" | "orders";
+type View = "dashboard" | "cashier" | "inventory" | "orders" | "reports";
 
 interface Props {
   active: View;
   onChange: (view: View) => void;
 }
 
-/**
- * Mobile Bottom-Navigation – inspiriert vom "BazarStock"-Projekt eines Freundes.
- * Ergänzt die Desktop-Sidebar auf kleinen Screens mit einer klassischen
- * Touch-optimierten Bottom-Bar (max-width 480px-Style, aber mit unserem Design-System).
- */
 export default function MobileNav({ active, onChange }: Props) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const isManager = user?.role === "manager";
 
-  const items: { key: View; label: string; icon: React.ReactNode }[] = [
+  const items: { key: View; label: string; icon: React.ReactNode; managerOnly?: boolean }[] = ([
     {
-      key: "dashboard",
+      key: "dashboard" as View,
       label: t("dashboard"),
       icon: <LayoutDashboard className="h-5 w-5" />,
     },
     {
-      key: "cashier",
+      key: "cashier" as View,
       label: t("cashier"),
       icon: <ShoppingCart className="h-5 w-5" />,
     },
     {
-      key: "inventory",
+      key: "inventory" as View,
       label: t("inventory"),
       icon: <Package className="h-5 w-5" />,
     },
     {
-      key: "orders",
+      key: "orders" as View,
       label: t("sales"),
       icon: <ClipboardList className="h-5 w-5" />,
     },
-  ];
+    {
+      key: "reports" as View,
+      label: t("reports"),
+      icon: <BarChart3 className="h-5 w-5" />,
+      managerOnly: true,
+    },
+  ] as { key: View; label: string; icon: React.ReactNode; managerOnly?: boolean }[]).filter(
+    (item) => !item.managerOnly || isManager
+  );
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white lg:hidden">
       <div className="mx-auto flex max-w-md">

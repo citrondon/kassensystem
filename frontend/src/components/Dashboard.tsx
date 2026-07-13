@@ -13,7 +13,7 @@ import {
   Store,
 } from "lucide-react";
 
-type View = "dashboard" | "cashier" | "inventory" | "orders";
+type View = "dashboard" | "cashier" | "inventory" | "orders" | "reports";
 
 interface Props {
   onNavigate: (view: View) => void;
