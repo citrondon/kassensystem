@@ -83,6 +83,10 @@ export default function CashierScreen() {
       stock: 0,
       category: null,
       low_stock_threshold: 0,
+      unit: "Stück",
+      cost_price: 0,
+      barcode: null,
+      image_path: null,
       quantity: 1,
     };
     setCart((prev) => [...prev, dummyProduct]);
