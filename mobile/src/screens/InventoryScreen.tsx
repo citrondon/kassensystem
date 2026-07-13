@@ -18,6 +18,8 @@ import {
   Product,
 } from "../db/queries";
 import { formatCFA } from "../utils/format";
+import { takePhoto, pickPhoto } from "../utils/photo";
+import { Image } from "react-native";
 
 const UNITS = ["Stück", "Kilosack", "Flasche", "Beutel", "Kiste"];
 
@@ -29,6 +31,7 @@ const EMPTY_FORM = {
   stock: "",
   low_stock_threshold: "5",
   category: "",
+  image_path: "" as string,
 };
 
 export default function InventoryScreen() {
@@ -67,6 +70,7 @@ export default function InventoryScreen() {
       stock: product.stock.toString(),
       low_stock_threshold: product.low_stock_threshold?.toString() ?? "5",
       category: product.category ?? "",
+      image_path: product.image_path ?? "",
     });
     setModalVisible(true);
   }
@@ -88,6 +92,16 @@ export default function InventoryScreen() {
     return ((vk - ek) / vk * 100).toFixed(0) + "%";
   }, [form.cost_price, form.price]);
 
+  async function handleTakePhoto() {
+    const uri = await takePhoto();
+    if (uri) updateField("image_path", uri);
+  }
+
+  async function handlePickPhoto() {
+    const uri = await pickPhoto();
+    if (uri) updateField("image_path", uri);
+  }
+
   async function handleSave() {
     const name = form.name.trim();
     if (!name) {
@@ -99,6 +113,7 @@ export default function InventoryScreen() {
     const stock = parseInt(form.stock, 10) || 0;
     const lowStock = parseInt(form.low_stock_threshold, 10) ?? 5;
     const category = form.category.trim() || null;
+    const imagePath = form.image_path.trim() || null;
 
     if (editingProduct) {
       await updateProduct(editingProduct.id, {
@@ -109,6 +124,7 @@ export default function InventoryScreen() {
         cost_price: costPrice,
         low_stock_threshold: lowStock,
         category,
+        image_path: imagePath,
       });
     } else {
       await addProduct(
@@ -120,7 +136,7 @@ export default function InventoryScreen() {
         costPrice,
         lowStock,
         null,
-        null
+        imagePath
       );
     }
     closeModal();
@@ -185,7 +201,16 @@ export default function InventoryScreen() {
             onPress={() => openEdit(item)}
             activeOpacity={0.8}
           >
-            <View style={{ flex: 1 }}>
+            {item.image_path ? (
+              <Image source={{ uri: item.image_path }} style={styles.productThumb} />
+            ) : (
+              <View style={styles.productThumbPlaceholder}>
+                <Text style={styles.productThumbText}>
+                  {item.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.productName}>{item.name}</Text>
               <Text style={styles.productMeta}>
                 {formatCFA(item.price)} • {item.stock} {item.unit}
@@ -220,6 +245,28 @@ export default function InventoryScreen() {
                 onChangeText={(text) => updateField("name", text)}
                 autoCapitalize="sentences"
               />
+
+              {/* Foto */}
+              <Text style={styles.modalLabel}>Foto</Text>
+              {form.image_path ? (
+                <View style={styles.photoPreviewRow}>
+                  <Image source={{ uri: form.image_path }} style={styles.photoPreview} />
+                  <TouchableOpacity
+                    style={styles.photoRemoveBtn}
+                    onPress={() => updateField("image_path", "")}
+                  >
+                    <Text style={styles.photoRemoveText}>✕ Entfernen</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+              <View style={styles.photoBtnRow}>
+                <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto}>
+                  <Text style={styles.photoBtnText}>📷 Kamera</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.photoBtn} onPress={handlePickPhoto}>
+                  <Text style={styles.photoBtnText}>🖼 Galerie</Text>
+                </TouchableOpacity>
+              </View>
 
               <Text style={styles.modalLabel}>Einheit</Text>
               <View style={styles.unitRow}>
@@ -400,4 +447,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalConfirmText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  productThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: "#f3f4f6",
+  },
+  productThumbPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: "#0f766e",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  productThumbText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  photoPreviewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
+  photoPreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+  },
+  photoRemoveBtn: {
+    backgroundColor: "#fee2e2",
+    borderRadius: 6,
+    padding: 6,
+    paddingHorizontal: 10,
+  },
+  photoRemoveText: { fontSize: 13, color: "#dc2626", fontWeight: "600" },
+  photoBtnRow: { flexDirection: "row", gap: 8, marginBottom: 4 },
+  photoBtn: {
+    flex: 1,
+    backgroundColor: "#f0fdfa",
+    borderWidth: 1,
+    borderColor: "#0f766e",
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "center",
+  },
+  photoBtnText: { color: "#0f766e", fontSize: 15, fontWeight: "600" },
 });

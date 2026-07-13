@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   Modal,
+  Image,
 } from "react-native";
 import { getProducts, checkout, checkoutOnCredit, getCustomers, addCustomer, Product, CheckoutItem, Customer } from "../db/queries";
 import { formatCFA } from "../utils/format";
@@ -205,6 +206,9 @@ export default function CashierScreen() {
             style={styles.productTile}
             onPress={() => openQtyPopup(item)}
           >
+            {item.image_path ? (
+              <Image source={{ uri: item.image_path }} style={styles.tilePhoto} />
+            ) : null}
             <Text style={styles.productName} numberOfLines={2}>
               {item.name}
             </Text>
@@ -512,6 +516,12 @@ const styles = StyleSheet.create({
   productName: { fontSize: 15, fontWeight: "600", textAlign: "center", color: "#1f2937" },
   productPrice: { fontSize: 16, fontWeight: "bold", color: "#0f766e", marginTop: 4 },
   productStock: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
+  tilePhoto: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
   customRow: {
     flexDirection: "row",
     padding: 8,
