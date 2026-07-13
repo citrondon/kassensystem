@@ -12,6 +12,8 @@ import {
 import { getProducts, checkout, Product, CheckoutItem } from "../db/queries";
 import { formatCFA } from "../utils/format";
 
+const CFA_DENOMS = [100, 500, 1000, 2000, 5000, 10000];
+
 interface CartEntry extends Product {
   quantity: number;
 }
@@ -22,7 +24,7 @@ export default function CashierScreen() {
   const [customAmount, setCustomAmount] = useState("");
   const [search, setSearch] = useState("");
   const [checkoutModal, setCheckoutModal] = useState(false);
-  const [amountTendered, setAmountTendered] = useState("");
+  const [amountTendered, setAmountTendered] = useState(0);
   const [discount, setDiscount] = useState("");
   const [resultModal, setResultModal] = useState<{ change: number; total: number } | null>(null);
   const [qtyProduct, setQtyProduct] = useState<Product | null>(null);
@@ -110,14 +112,13 @@ export default function CashierScreen() {
       Alert.alert("Warenkorb leer", "Füge Produkte hinzu.");
       return;
     }
-    setAmountTendered("");
+    setAmountTendered(0);
     setDiscount("");
     setCheckoutModal(true);
   }
 
   async function doCheckout() {
-    const tendered = parseInt(amountTendered, 10) || 0;
-    if (tendered < grandTotal) {
+    if (amountTendered < grandTotal) {
       Alert.alert("Zu wenig", `Kunde muss mindestens ${formatCFA(grandTotal)} geben.`);
       return;
     }
@@ -129,7 +130,7 @@ export default function CashierScreen() {
       quantity: i.quantity,
     }));
 
-    const result = await checkout(items, tendered, discountAmount);
+    const result = await checkout(items, amountTendered, discountAmount);
     setCheckoutModal(false);
     setResultModal({ change: result.changeAmount, total: grandTotal });
     setCart([]);
@@ -237,18 +238,38 @@ export default function CashierScreen() {
             />
 
             <Text style={styles.modalLabel}>Kunde gibt (CFA)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder={grandTotal.toString()}
-              keyboardType="numeric"
-              value={amountTendered}
-              onChangeText={setAmountTendered}
-              autoFocus
-            />
+            <Text style={styles.tenderedDisplay}>{formatCFA(amountTendered)}</Text>
 
-            {amountTendered !== "" && (
+            <View style={styles.cashGrid}>
+              {CFA_DENOMS.map((denom) => (
+                <TouchableOpacity
+                  key={denom}
+                  style={styles.cashBtn}
+                  onPress={() => setAmountTendered((prev) => prev + denom)}
+                >
+                  <Text style={styles.cashBtnText}>{formatCFA(denom)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.cashActionRow}>
+              <TouchableOpacity
+                style={styles.exactBtn}
+                onPress={() => setAmountTendered(grandTotal)}
+              >
+                <Text style={styles.exactBtnText}>Exakt</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.clearBtn}
+                onPress={() => setAmountTendered(0)}
+              >
+                <Text style={styles.clearBtnText}>C</Text>
+              </TouchableOpacity>
+            </View>
+
+            {amountTendered >= grandTotal && (
               <Text style={styles.modalChange}>
-                Zurück: {formatCFA((parseInt(amountTendered, 10) || 0) - grandTotal)}
+                Zurück: {formatCFA(amountTendered - grandTotal)}
               </Text>
             )}
 
@@ -512,4 +533,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   qtyQuickText: { fontSize: 18, fontWeight: "bold", color: "#0f766e" },
+  tenderedDisplay: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#0f766e",
+    textAlign: "center",
+    paddingVertical: 12,
+    backgroundColor: "#f0fdfa",
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  cashGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  cashBtn: {
+    backgroundColor: "#0f766e",
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  cashBtnText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  cashActionRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  exactBtn: {
+    flex: 1,
+    backgroundColor: "#059669",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+  },
+  exactBtnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  clearBtn: {
+    flex: 1,
+    backgroundColor: "#fef3c7",
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+  },
+  clearBtnText: { color: "#92400e", fontSize: 16, fontWeight: "bold" },
 });
