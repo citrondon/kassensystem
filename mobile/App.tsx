@@ -11,6 +11,7 @@ import InventoryScreen from "./src/screens/InventoryScreen";
 import CustomerBookScreen from "./src/screens/CustomerBookScreen";
 import DailySummaryScreen from "./src/screens/DailySummaryScreen";
 import HistoryScreen from "./src/screens/HistoryScreen";
+import ShareScreen from "./src/screens/ShareScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -49,6 +50,11 @@ function MainTabs() {
         name="Tagesbilanz"
         component={DailySummaryScreen}
         options={{ title: "📊 Bilanz" }}
+      />
+      <Tab.Screen
+        name="Teilen"
+        component={ShareScreen}
+        options={{ title: "📤 Teilen" }}
       />
     </Tab.Navigator>
   );
