@@ -9,7 +9,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { getProducts, checkout, Product, CheckoutItem } from "../db/queries";
+import { getProducts, checkout, checkoutOnCredit, getCustomers, addCustomer, Product, CheckoutItem, Customer } from "../db/queries";
 import { formatCFA } from "../utils/format";
 
 const CFA_DENOMS = [100, 500, 1000, 2000, 5000, 10000];
@@ -29,6 +29,10 @@ export default function CashierScreen() {
   const [resultModal, setResultModal] = useState<{ change: number; total: number } | null>(null);
   const [qtyProduct, setQtyProduct] = useState<Product | null>(null);
   const [qtyValue, setQtyValue] = useState("1");
+  const [showCreditPicker, setShowCreditPicker] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -140,6 +144,42 @@ export default function CashierScreen() {
     setCart([]);
     setDiscount("");
     await loadProducts();
+  }
+
+  async function openCreditPicker() {
+    if (cart.length === 0) {
+      Alert.alert("Warenkorb leer", "Füge Produkte hinzu.");
+      return;
+    }
+    const c = await getCustomers();
+    setCustomers(c);
+    setShowCreditPicker(true);
+  }
+
+  async function doCreditCheckout(customerId: number, customerName: string) {
+    const items: CheckoutItem[] = cart.map((i) => ({
+      productId: i.id,
+      name: i.name,
+      price: i.price,
+      quantity: i.quantity,
+    }));
+
+    await checkoutOnCredit(items, customerId, discountAmount);
+    setCheckoutModal(false);
+    setShowCreditPicker(false);
+    setResultModal({ change: 0, total: grandTotal });
+    setCart([]);
+    setDiscount("");
+    await loadProducts();
+    Alert.alert("Auf Kredit gebucht", `Verkauf für ${customerName} als Schulden eingetragen.`);
+  }
+
+  async function handleNewCustomer() {
+    if (!newCustomerName.trim()) return;
+    const id = await addCustomer(newCustomerName.trim());
+    setShowNewCustomer(false);
+    setNewCustomerName("");
+    await doCreditCheckout(id, newCustomerName.trim());
   }
 
   return (
@@ -284,8 +324,95 @@ export default function CashierScreen() {
               >
                 <Text style={styles.modalCancelText}>Abbrechen</Text>
               </TouchableOpacity>
+              <TouchableOpacity style={styles.creditBtn} onPress={openCreditPicker}>
+                <Text style={styles.creditBtnText}>📒 Kredit</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.modalConfirm} onPress={doCheckout}>
                 <Text style={styles.modalConfirmText}>Bestätigen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Credit Customer Picker Modal */}
+      <Modal visible={showCreditPicker} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.creditContent}>
+            <Text style={styles.modalTitle}>Auf Kredit verkaufen</Text>
+            <Text style={styles.creditTotal}>Gesamt: {formatCFA(grandTotal)}</Text>
+
+            <Text style={styles.modalLabel}>Kunde wählen</Text>
+            {customers.length === 0 ? (
+              <Text style={styles.creditEmpty}>Noch keine Kunden angelegt.</Text>
+            ) : (
+              <FlatList
+                data={customers}
+                keyExtractor={(item) => item.id.toString()}
+                style={styles.creditList}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.creditCustomerRow}
+                    onPress={() => doCreditCheckout(item.id, item.name)}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.creditCustomerName}>{item.name}</Text>
+                      {item.phone && (
+                        <Text style={styles.creditCustomerPhone}>{item.phone}</Text>
+                      )}
+                    </View>
+                    {item.balance > 0 && (
+                      <Text style={styles.creditBalance}>
+                        Schulden: {formatCFA(item.balance)}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+
+            <TouchableOpacity
+              style={styles.newCustomerBtn}
+              onPress={() => setShowNewCustomer(true)}
+            >
+              <Text style={styles.newCustomerBtnText}>+ Neuer Kunde</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setShowCreditPicker(false)}
+            >
+              <Text style={styles.modalCancelText}>Abbrechen</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* New Customer Modal */}
+      <Modal visible={showNewCustomer} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Neuer Kunde</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Name"
+              value={newCustomerName}
+              onChangeText={setNewCustomerName}
+              autoCapitalize="words"
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => {
+                  setShowNewCustomer(false);
+                  setNewCustomerName("");
+                }}
+              >
+                <Text style={styles.modalCancelText}>Abbrechen</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirm} onPress={handleNewCustomer}>
+                <Text style={styles.modalConfirmText}>Anlegen + Verkaufen</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -582,4 +709,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   clearBtnText: { color: "#92400e", fontSize: 16, fontWeight: "bold" },
+  creditBtn: {
+    flex: 1,
+    backgroundColor: "#f59e0b",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+  },
+  creditBtnText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  creditContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    width: "100%",
+    maxWidth: 380,
+    maxHeight: "85%",
+  },
+  creditTotal: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#0f766e",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  creditEmpty: { textAlign: "center", color: "#9ca3af", paddingVertical: 20 },
+  creditList: { maxHeight: 250, marginBottom: 12 },
+  creditCustomerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: "#f9fafb",
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  creditCustomerName: { fontSize: 16, fontWeight: "600", color: "#1f2937" },
+  creditCustomerPhone: { fontSize: 13, color: "#9ca3af", marginTop: 2 },
+  creditBalance: { fontSize: 13, color: "#dc2626", fontWeight: "600" },
+  newCustomerBtn: {
+    backgroundColor: "#f0fdfa",
+    borderWidth: 1,
+    borderColor: "#0f766e",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  newCustomerBtnText: { color: "#0f766e", fontSize: 16, fontWeight: "bold" },
 });

@@ -185,7 +185,46 @@ export async function checkout(
   return { orderId, changeAmount: change };
 }
 
-// ─── Daily Stats ───
+export async function checkoutOnCredit(
+  items: CheckoutItem[],
+  customerId: number,
+  discountAmount: number = 0
+): Promise<OrderResult> {
+  const db = await getDb();
+
+  const total = items.reduce(
+    (sum, i) => sum + i.price * i.quantity,
+    0
+  ) - discountAmount;
+
+  const orderResult = await db.runAsync(
+    `INSERT INTO orders (total_amount, discount_amount, amount_tendered, change_amount, payment_method)
+     VALUES (?, ?, 0, 0, 'credit')`,
+    [total, discountAmount]
+  );
+  const orderId = orderResult.lastInsertRowId as number;
+
+  for (const item of items) {
+    await db.runAsync(
+      `INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, line_total)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [orderId, item.productId, item.name, item.quantity, item.price, item.price * item.quantity]
+    );
+    if (item.productId > 0) {
+      await db.runAsync(
+        "UPDATE products SET stock = stock - ? WHERE id = ?",
+        [item.quantity, item.productId]
+      );
+    }
+  }
+
+  await db.runAsync(
+    "INSERT INTO debts (customer_id, amount, note) VALUES (?, ?, ?)",
+    [customerId, total, `Verkauf #${orderId}`]
+  );
+
+  return { orderId, changeAmount: 0 };
+}
 
 export interface DailyStats {
   totalRevenue: number;

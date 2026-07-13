@@ -287,6 +287,58 @@ export async function getDailyStats(date?: string): Promise<DailyStats> {
   };
 }
 
+export async function checkoutOnCredit(
+  items: CheckoutItem[],
+  customerId: number,
+  discountAmount: number = 0
+): Promise<OrderResult> {
+  const db = loadDB();
+  const total =
+    items.reduce((sum, i) => sum + i.price * i.quantity, 0) - discountAmount;
+
+  const orderId = nextId(db, "orders");
+  db.orders.push({
+    id: orderId,
+    total_amount: total,
+    discount_amount: discountAmount,
+    amount_tendered: 0,
+    change_amount: 0,
+    payment_method: "credit",
+    order_date: new Date().toISOString(),
+  });
+
+  for (const item of items) {
+    const itemId = nextId(db, "order_items");
+    db.order_items.push({
+      id: itemId,
+      order_id: orderId,
+      product_id: item.productId,
+      product_name: item.name,
+      quantity: item.quantity,
+      unit_price: item.price,
+      line_total: item.price * item.quantity,
+    });
+    if (item.productId > 0) {
+      const prod = db.products.find((p) => p.id === item.productId);
+      if (prod) prod.stock -= item.quantity;
+    }
+  }
+
+  const debtId = nextId(db, "debts");
+  db.debts.push({
+    id: debtId,
+    customer_id: customerId,
+    amount: total,
+    note: `Verkauf #${orderId}`,
+    is_paid: 0,
+    created_at: new Date().toISOString(),
+    settled_at: null,
+  });
+
+  saveDB(db);
+  return { orderId, changeAmount: 0 };
+}
+
 // ─── Order History ───
 
 export interface Order {
