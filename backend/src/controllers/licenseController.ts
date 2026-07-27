@@ -88,6 +88,13 @@ export const activateLicense = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    // Check if a store already has this license_key assigned
+    // Clear it first to avoid UNIQUE constraint violation
+    await client.query(
+      `UPDATE stores SET license_key = NULL WHERE license_key = $1`,
+      [licenseKey]
+    );
+
     // Upsert store by machine_id
     const storeResult = await client.query(
       `INSERT INTO stores (name, machine_id, license_key)
