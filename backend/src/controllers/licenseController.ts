@@ -4,22 +4,49 @@ import crypto from "crypto";
 import pool from "../utils/pool.js";
 
 const LICENSE_JWT_SECRET = process.env.LICENSE_JWT_SECRET || process.env.JWT_SECRET || "license-fallback-secret";
-const TOKEN_TTL_DAYS = 7; // license token valid 7 days → 7 days offline grace
+const TOKEN_TTL_DAYS = 7;
 
 export interface LicenseTokenPayload {
   licenseKey: string;
   storeId: number;
   plan: string;
   status: string;
-  expiresAt: string; // ISO date — the subscription expiry
+  expiresAt: string;
   iat: number;
   exp: number;
 }
 
+// ── License Key Management (developer-only) ──
+
 /**
- * POST /api/license/keys  (developer-only)
- * Body: { plan?: "trial"|"basic"|"pro", durationDays?: number }
- * Creates a new license key + subscription row.
+ * GET /api/license/keys
+ * Lists all license keys with store info.
+ */
+export const listLicenseKeys = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         s.id, s.license_key, s.plan, s.status, s.expires_at, s.started_at, s.created_at,
+         st.id   AS store_id,
+         st.name AS store_name,
+         st.location AS store_location,
+         st.machine_id
+       FROM subscriptions s
+       LEFT JOIN stores st ON st.license_key = s.license_key
+       ORDER BY s.created_at DESC`
+    );
+
+    res.json({ success: true, keys: result.rows });
+  } catch (error) {
+    console.error("List license keys error:", error);
+    res.status(500).json({ success: false, error: "Abruf fehlgeschlagen." });
+  }
+};
+
+/**
+ * POST /api/license/keys
+ * Body: { plan?, durationDays? }
+ * Creates a new license key.
  */
 export const createLicenseKey = async (req: Request, res: Response): Promise<void> => {
   const plan = (req.body.plan as string) || "trial";
@@ -39,12 +66,7 @@ export const createLicenseKey = async (req: Request, res: Response): Promise<voi
       [licenseKey, plan, expiresAt.toISOString()]
     );
 
-    res.json({
-      success: true,
-      licenseKey,
-      plan,
-      expiresAt: expiresAt.toISOString(),
-    });
+    res.json({ success: true, licenseKey, plan, expiresAt: expiresAt.toISOString() });
   } catch (error) {
     console.error("Create license key error:", error);
     res.status(500).json({ success: false, error: "Lizenzschlüssel konnte nicht erstellt werden." });
@@ -52,10 +74,77 @@ export const createLicenseKey = async (req: Request, res: Response): Promise<voi
 };
 
 /**
- * POST /api/license/activate
- * Body: { licenseKey: string, storeName: string, machineId: string }
- * Registers a store, links the license key, returns a license token.
+ * PATCH /api/license/keys/:key
+ * Body: { action: "extend"|"cancel"|"reactivate", durationDays? }
  */
+export const updateLicenseKey = async (req: Request, res: Response): Promise<void> => {
+  const { key } = req.params;
+  const { action, durationDays } = req.body;
+
+  if (!["extend", "cancel", "reactivate"].includes(action)) {
+    res.status(400).json({ success: false, error: "action muss extend, cancel oder reactivate sein." });
+    return;
+  }
+
+  try {
+    if (action === "extend") {
+      const days = Number(durationDays) || 30;
+      const result = await pool.query(
+        `UPDATE subscriptions
+         SET expires_at = GREATEST(expires_at, NOW()) + INTERVAL '${days} days',
+             status = 'active',
+             cancelled_at = NULL
+         WHERE license_key = $1
+         RETURNING license_key, plan, status, expires_at`,
+        [key]
+      );
+
+      if (result.rows.length === 0) {
+        res.status(404).json({ success: false, error: "Lizenz nicht gefunden." });
+        return;
+      }
+
+      res.json({ success: true, license: result.rows[0] });
+    } else if (action === "cancel") {
+      const result = await pool.query(
+        `UPDATE subscriptions SET status = 'cancelled', cancelled_at = NOW()
+         WHERE license_key = $1 RETURNING license_key, plan, status, expires_at`,
+        [key]
+      );
+
+      if (result.rows.length === 0) {
+        res.status(404).json({ success: false, error: "Lizenz nicht gefunden." });
+        return;
+      }
+
+      res.json({ success: true, license: result.rows[0] });
+    } else if (action === "reactivate") {
+      const days = Number(durationDays) || 30;
+      const result = await pool.query(
+        `UPDATE subscriptions
+         SET status = 'active',
+             expires_at = NOW() + INTERVAL '${days} days',
+             cancelled_at = NULL
+         WHERE license_key = $1
+         RETURNING license_key, plan, status, expires_at`,
+        [key]
+      );
+
+      if (result.rows.length === 0) {
+        res.status(404).json({ success: false, error: "Lizenz nicht gefunden." });
+        return;
+      }
+
+      res.json({ success: true, license: result.rows[0] });
+    }
+  } catch (error) {
+    console.error("Update license key error:", error);
+    res.status(500).json({ success: false, error: "Aktualisierung fehlgeschlagen." });
+  }
+};
+
+// ── License Activation + Verification (public) ──
+
 export const activateLicense = async (req: Request, res: Response): Promise<void> => {
   const { licenseKey, storeName, machineId } = req.body;
 
@@ -68,7 +157,6 @@ export const activateLicense = async (req: Request, res: Response): Promise<void
   try {
     await client.query("BEGIN");
 
-    // Check license exists and is valid
     const subResult = await client.query(
       `SELECT id, plan, status, expires_at FROM subscriptions WHERE license_key = $1 FOR UPDATE`,
       [licenseKey]
@@ -88,14 +176,8 @@ export const activateLicense = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Check if a store already has this license_key assigned
-    // Clear it first to avoid UNIQUE constraint violation
-    await client.query(
-      `UPDATE stores SET license_key = NULL WHERE license_key = $1`,
-      [licenseKey]
-    );
+    await client.query(`UPDATE stores SET license_key = NULL WHERE license_key = $1`, [licenseKey]);
 
-    // Upsert store by machine_id
     const storeResult = await client.query(
       `INSERT INTO stores (name, machine_id, license_key)
        VALUES ($1, $2, $3)
@@ -105,31 +187,17 @@ export const activateLicense = async (req: Request, res: Response): Promise<void
     );
     const storeId = storeResult.rows[0].id;
 
-    // Link store to subscription
-    await client.query(
-      `UPDATE subscriptions SET store_id = $1 WHERE license_key = $2`,
-      [storeId, licenseKey]
-    );
+    await client.query(`UPDATE subscriptions SET store_id = $1 WHERE license_key = $2`, [storeId, licenseKey]);
 
     await client.query("COMMIT");
 
     const token = signLicenseToken({
-      licenseKey,
-      storeId,
-      plan: sub.plan,
-      status: sub.status,
-      expiresAt: sub.expires_at,
+      licenseKey, storeId, plan: sub.plan, status: sub.status, expiresAt: sub.expires_at,
     });
 
     res.json({
-      success: true,
-      token,
-      license: {
-        plan: sub.plan,
-        status: sub.status,
-        expiresAt: sub.expires_at,
-        storeId,
-      },
+      success: true, token,
+      license: { plan: sub.plan, status: sub.status, expiresAt: sub.expires_at, storeId },
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -140,12 +208,6 @@ export const activateLicense = async (req: Request, res: Response): Promise<void
   }
 };
 
-/**
- * POST /api/license/verify
- * Body: { licenseKey: string, machineId: string }
- * Verifies a license key + machine, returns fresh token.
- * Called on startup when cached token is expired.
- */
 export const verifyLicense = async (req: Request, res: Response): Promise<void> => {
   const { licenseKey, machineId } = req.body;
 
@@ -169,39 +231,22 @@ export const verifyLicense = async (req: Request, res: Response): Promise<void> 
     }
 
     const sub = subResult.rows[0];
-
-    // Check expiry
     const now = new Date();
     const expiresAt = new Date(sub.expires_at);
+
     if (expiresAt < now) {
-      // Auto-update status
       await pool.query(`UPDATE subscriptions SET status = 'expired' WHERE id = $1`, [sub.id]);
-      res.status(403).json({
-        success: false,
-        error: "Lizenz abgelaufen.",
-        expired: true,
-        expiresAt: sub.expires_at,
-      });
+      res.status(403).json({ success: false, error: "Lizenz abgelaufen.", expired: true, expiresAt: sub.expires_at });
       return;
     }
 
     const token = signLicenseToken({
-      licenseKey,
-      storeId: sub.store_id,
-      plan: sub.plan,
-      status: sub.status,
-      expiresAt: sub.expires_at,
+      licenseKey, storeId: sub.store_id, plan: sub.plan, status: sub.status, expiresAt: sub.expires_at,
     });
 
     res.json({
-      success: true,
-      token,
-      license: {
-        plan: sub.plan,
-        status: sub.status,
-        expiresAt: sub.expires_at,
-        storeId: sub.store_id,
-      },
+      success: true, token,
+      license: { plan: sub.plan, status: sub.status, expiresAt: sub.expires_at, storeId: sub.store_id },
     });
   } catch (error) {
     console.error("License verify error:", error);
@@ -209,11 +254,6 @@ export const verifyLicense = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-/**
- * GET /api/license/status
- * Requires: Bearer license token
- * Returns current license status from the token (no DB call needed).
- */
 export const getLicenseStatus = async (req: Request, res: Response): Promise<void> => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
@@ -224,7 +264,6 @@ export const getLicenseStatus = async (req: Request, res: Response): Promise<voi
   try {
     const token = authHeader.slice(7);
     const payload = jwt.verify(token, LICENSE_JWT_SECRET) as LicenseTokenPayload;
-
     const now = new Date();
     const subExpiry = new Date(payload.expiresAt);
     const tokenExpiry = new Date(payload.exp * 1000);
@@ -247,20 +286,10 @@ export const getLicenseStatus = async (req: Request, res: Response): Promise<voi
 // ── Helpers ──
 
 function signLicenseToken(data: {
-  licenseKey: string;
-  storeId: number;
-  plan: string;
-  status: string;
-  expiresAt: string;
+  licenseKey: string; storeId: number; plan: string; status: string; expiresAt: string;
 }): string {
   return jwt.sign(
-    {
-      licenseKey: data.licenseKey,
-      storeId: data.storeId,
-      plan: data.plan,
-      status: data.status,
-      expiresAt: data.expiresAt,
-    },
+    { licenseKey: data.licenseKey, storeId: data.storeId, plan: data.plan, status: data.status, expiresAt: data.expiresAt },
     LICENSE_JWT_SECRET,
     { expiresIn: `${TOKEN_TTL_DAYS}d` }
   );
@@ -270,9 +299,6 @@ export function verifyLicenseToken(token: string): LicenseTokenPayload {
   return jwt.verify(token, LICENSE_JWT_SECRET) as LicenseTokenPayload;
 }
 
-/**
- * Generate a random license key (for developer use).
- */
 export function generateLicenseKey(): string {
   const parts: string[] = [];
   for (let i = 0; i < 4; i++) {
