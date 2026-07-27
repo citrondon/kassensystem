@@ -69,6 +69,110 @@ export const syncAnalytics = async (req: Request, res: Response): Promise<void> 
 };
 
 /**
+ * POST /api/analytics/local-sync
+ * Requires: Bearer license token
+ * Aggregates LOCAL orders → analytics_snapshots directly in this DB.
+ * No external data needed — reads from orders + order_items tables.
+ * Body: { from?: "YYYY-MM-DD", to?: "YYYY-MM-DD" }
+ */
+export const localSync = async (req: Request, res: Response): Promise<void> => {
+  if (!req.license) {
+    res.status(401).json({ success: false, error: "Keine Lizenz." });
+    return;
+  }
+
+  const storeId = req.license.storeId;
+  const to = (req.body.to as string) || new Date().toISOString().split("T")[0];
+  const from = (req.body.from as string) || "2020-01-01";
+
+  const client = await pool.connect();
+
+  try {
+    // Aggregate orders by day
+    const dailyResult = await client.query(
+      `SELECT
+         DATE(o.order_date)                           AS snapshot_date,
+         COUNT(*)                                     AS total_orders,
+         SUM(o.total_amount)                          AS total_revenue,
+         SUM(o.discount_amount)                       AS total_discount
+       FROM orders o
+       WHERE DATE(o.order_date) BETWEEN $1 AND $2
+       GROUP BY DATE(o.order_date)
+       ORDER BY snapshot_date`,
+      [from, to]
+    );
+
+    if (dailyResult.rows.length === 0) {
+      res.json({ success: true, synced: 0, message: "Keine Bestellungen im Zeitraum." });
+      return;
+    }
+
+    // For each day, get top products
+    await client.query("BEGIN");
+
+    for (const day of dailyResult.rows) {
+      const topProductsResult = await client.query(
+        `SELECT
+           p.name                                                AS name,
+           COALESCE(c.name, 'Ohne Kategorie')                   AS category,
+           SUM(oi.quantity)                                      AS quantity,
+           SUM(oi.quantity * oi.unit_price)                      AS revenue
+         FROM order_items oi
+         JOIN orders o ON oi.order_id = o.id
+         JOIN products p ON oi.product_id = p.id
+         LEFT JOIN categories c ON p.category_id = c.id
+         WHERE DATE(o.order_date) = $1
+         GROUP BY p.name, c.name
+         ORDER BY revenue DESC
+         LIMIT 10`,
+        [day.snapshot_date]
+      );
+
+      const topProducts = topProductsResult.rows.map((r: Record<string, unknown>) => ({
+        name: r.name,
+        category: r.category,
+        quantity: Number(r.quantity),
+        revenue: Number(r.revenue),
+      }));
+
+      await client.query(
+        `INSERT INTO analytics_snapshots
+           (store_id, snapshot_date, total_orders, total_revenue, total_discount, top_products)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (store_id, snapshot_date) DO UPDATE SET
+           total_orders   = EXCLUDED.total_orders,
+           total_revenue  = EXCLUDED.total_revenue,
+           total_discount = EXCLUDED.total_discount,
+           top_products   = EXCLUDED.top_products,
+           synced_at      = CURRENT_TIMESTAMP`,
+        [
+          storeId,
+          day.snapshot_date,
+          Number(day.total_orders),
+          Number(day.total_revenue).toFixed(2),
+          Number(day.total_discount).toFixed(2),
+          JSON.stringify(topProducts),
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      synced: dailyResult.rows.length,
+      days: dailyResult.rows.map((r: Record<string, unknown>) => r.snapshot_date),
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Local sync error:", error);
+    res.status(500).json({ success: false, error: "Lokaler Sync fehlgeschlagen." });
+  } finally {
+    client.release();
+  }
+};
+
+/**
  * GET /api/analytics/summary
  * Requires: developer auth
  * Query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -94,7 +198,6 @@ export const getAnalyticsSummary = async (req: Request, res: Response): Promise<
 
     const row = result.rows[0];
 
-    // Per-store breakdown
     const storesResult = await pool.query(
       `SELECT
          s.id, s.name, s.location,
@@ -127,9 +230,6 @@ export const getAnalyticsSummary = async (req: Request, res: Response): Promise<
 
 /**
  * GET /api/analytics/bestsellers
- * Requires: developer auth
- * Query: ?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=10
- * Bestselling products across ALL stores.
  */
 export const getBestsellers = async (req: Request, res: Response): Promise<void> => {
   const to = (req.query.to as string) || new Date().toISOString().split("T")[0];
@@ -162,9 +262,6 @@ export const getBestsellers = async (req: Request, res: Response): Promise<void>
 
 /**
  * GET /api/analytics/trends
- * Requires: developer auth
- * Query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
- * Daily revenue trend across all stores.
  */
 export const getTrends = async (req: Request, res: Response): Promise<void> => {
   const to = (req.query.to as string) || new Date().toISOString().split("T")[0];
@@ -192,8 +289,6 @@ export const getTrends = async (req: Request, res: Response): Promise<void> => {
 
 /**
  * GET /api/analytics/stores/:storeId
- * Requires: developer auth
- * Detailed analytics for a single store.
  */
 export const getStoreDetail = async (req: Request, res: Response): Promise<void> => {
   const storeId = Number(req.params.storeId);
