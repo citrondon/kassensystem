@@ -8,17 +8,24 @@ import {
   ProductFormData,
   PaymentMethod,
   LicenseInfo,
+  LicenseKeyRow,
   AnalyticsSummary,
   StoreSummary,
   Bestseller,
   TrendPoint,
 } from "../types";
 import { getStoredToken } from "../contexts/AuthContext";
+import { getStoredLicenseToken } from "../contexts/LicenseContext";
 
 const API_BASE = "/api";
 
 function authHeaders(): Record<string, string> {
   const token = getStoredToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function licenseHeaders(): Record<string, string> {
+  const token = getStoredLicenseToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -182,7 +189,40 @@ export async function verifyLicense(
   return res.json();
 }
 
-// ── Analytics API (developer-only) ──
+// ── License Management API (developer-only) ──
+
+export async function listLicenseKeys(): Promise<{ success: boolean; keys: LicenseKeyRow[] }> {
+  const res = await fetch(`${API_BASE}/license/keys`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Lizenzschlüssel");
+  return res.json();
+}
+
+export async function createLicenseKey(
+  plan: string,
+  durationDays: number
+): Promise<{ success: boolean; licenseKey: string; plan: string; expiresAt: string }> {
+  const res = await fetch(`${API_BASE}/license/keys`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ plan, durationDays }),
+  });
+  return res.json();
+}
+
+export async function updateLicenseKey(
+  key: string,
+  action: "extend" | "cancel" | "reactivate",
+  durationDays?: number
+): Promise<{ success: boolean; license: LicenseKeyRow }> {
+  const res = await fetch(`${API_BASE}/license/keys/${key}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ action, durationDays }),
+  });
+  return res.json();
+}
+
+// ── Analytics API ──
 
 export async function getAnalyticsSummary(
   from?: string,
@@ -228,5 +268,17 @@ export async function getTrends(
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Trends");
+  return res.json();
+}
+
+export async function localSync(
+  from?: string,
+  to?: string
+): Promise<{ success: boolean; synced: number; days?: string[]; message?: string }> {
+  const res = await fetch(`${API_BASE}/analytics/local-sync`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...licenseHeaders() },
+    body: JSON.stringify({ from, to }),
+  });
   return res.json();
 }
