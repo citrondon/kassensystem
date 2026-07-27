@@ -16,7 +16,7 @@ export default function Header() {
           <User className="h-4 w-4" />
           <span className="font-medium">{user.username}</span>
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-            {user.role === "manager" ? t("manager") : t("cashierRole")}
+            {user.role === "developer" ? "Developer" : user.role === "manager" ? t("manager") : t("cashierRole")}
           </span>
         </div>
         <div className="flex items-center gap-1">

@@ -1,7 +1,8 @@
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList, Store } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, ClipboardList, Store, BarChart3 } from "lucide-react";
 import { useI18n } from "../i18n/I18nContext";
+import { useAuth } from "../contexts/AuthContext";
 
-type View = "dashboard" | "cashier" | "inventory" | "orders";
+type View = "dashboard" | "cashier" | "inventory" | "orders" | "analytics";
 
 interface Props {
   active: View;
@@ -10,6 +11,8 @@ interface Props {
 
 export default function Sidebar({ active, onChange }: Props) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const isDeveloper = user?.role === "developer";
 
   const items: { key: View; label: string; icon: React.ReactNode }[] = [
     {
@@ -32,6 +35,13 @@ export default function Sidebar({ active, onChange }: Props) {
       label: t("orders"),
       icon: <ClipboardList className="h-5 w-5" />,
     },
+    ...(isDeveloper
+      ? [{
+          key: "analytics" as View,
+          label: "Analytics",
+          icon: <BarChart3 className="h-5 w-5" />,
+        }]
+      : []),
   ];
 
   return (

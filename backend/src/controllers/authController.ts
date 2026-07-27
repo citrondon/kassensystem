@@ -7,13 +7,13 @@ export interface UserRow {
   id: number;
   username: string;
   password_hash: string;
-  role: "manager" | "cashier";
+  role: "manager" | "cashier" | "developer";
 }
 
 export interface JwtPayload {
   userId: number;
   username: string;
-  role: "manager" | "cashier";
+  role: "manager" | "cashier" | "developer";
 }
 
 const JWT_SECRET = process.env.JWT_SECRET;

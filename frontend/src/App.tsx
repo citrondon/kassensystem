@@ -1,23 +1,37 @@
 import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { LicenseProvider, useLicense } from "./contexts/LicenseContext";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
 import Dashboard from "./components/Dashboard";
 import CashierInterface from "./components/CashierInterface";
 import InventoryOverview from "./components/InventoryOverview";
 import OrdersView from "./components/OrdersView";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import LoginView from "./components/LoginView";
+import LicenseActivation from "./components/LicenseActivation";
 import Header from "./components/Header";
 
-type View = "dashboard" | "cashier" | "inventory" | "orders";
+type View = "dashboard" | "cashier" | "inventory" | "orders" | "analytics";
 
 function AppContent() {
   const [view, setView] = useState<View>("dashboard");
   const { user, loading } = useAuth();
+  const { state: licenseState } = useLicense();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [view]);
+
+  // License gate: checking or none → show activation
+  if (licenseState === "checking" || licenseState === "none") {
+    return <LicenseActivation />;
+  }
+
+  // License expired → show expired screen (but still allow offline-grace)
+  if (licenseState === "expired") {
+    return <LicenseActivation />;
+  }
 
   if (loading) {
     return (
@@ -41,6 +55,7 @@ function AppContent() {
           {view === "cashier" && <CashierInterface />}
           {view === "inventory" && <InventoryOverview />}
           {view === "orders" && <OrdersView />}
+          {view === "analytics" && <AnalyticsDashboard />}
         </main>
       </div>
       <MobileNav active={view} onChange={setView} />
@@ -50,8 +65,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LicenseProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LicenseProvider>
   );
 }

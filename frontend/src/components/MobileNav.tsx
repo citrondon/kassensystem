@@ -1,7 +1,8 @@
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, ClipboardList, BarChart3 } from "lucide-react";
 import { useI18n } from "../i18n/I18nContext";
+import { useAuth } from "../contexts/AuthContext";
 
-type View = "dashboard" | "cashier" | "inventory" | "orders";
+type View = "dashboard" | "cashier" | "inventory" | "orders" | "analytics";
 
 interface Props {
   active: View;
@@ -15,6 +16,8 @@ interface Props {
  */
 export default function MobileNav({ active, onChange }: Props) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const isDeveloper = user?.role === "developer";
 
   const items: { key: View; label: string; icon: React.ReactNode }[] = [
     {
@@ -37,6 +40,13 @@ export default function MobileNav({ active, onChange }: Props) {
       label: t("sales"),
       icon: <ClipboardList className="h-5 w-5" />,
     },
+    ...(isDeveloper
+      ? [{
+          key: "analytics" as View,
+          label: "Analytics",
+          icon: <BarChart3 className="h-5 w-5" />,
+        }]
+      : []),
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>

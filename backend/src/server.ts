@@ -8,6 +8,8 @@ import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import licenseRoutes from "./routes/licenseRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
 import pool from "./utils/pool.js";
 
 dotenv.config();
@@ -61,6 +63,8 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/checkout", orderRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/license", licenseRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.use(
   (err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

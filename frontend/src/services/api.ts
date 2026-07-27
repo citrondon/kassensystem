@@ -7,6 +7,11 @@ import {
   OrderDetail,
   ProductFormData,
   PaymentMethod,
+  LicenseInfo,
+  AnalyticsSummary,
+  StoreSummary,
+  Bestseller,
+  TrendPoint,
 } from "../types";
 import { getStoredToken } from "../contexts/AuthContext";
 
@@ -147,5 +152,81 @@ export async function getOrders(): Promise<OrderListItem[]> {
 export async function getOrderById(id: number): Promise<OrderDetail> {
   const res = await fetch(`${API_BASE}/orders/${id}`);
   if (!res.ok) throw new Error("Fehler beim Abrufen der Bestellung");
+  return res.json();
+}
+
+// ── License API ──
+
+export async function activateLicense(
+  licenseKey: string,
+  storeName: string,
+  machineId: string
+): Promise<{ success: boolean; token: string; license: LicenseInfo; error?: string }> {
+  const res = await fetch(`${API_BASE}/license/activate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ licenseKey, storeName, machineId }),
+  });
+  return res.json();
+}
+
+export async function verifyLicense(
+  licenseKey: string,
+  machineId: string
+): Promise<{ success: boolean; token: string; license: LicenseInfo; error?: string; expired?: boolean }> {
+  const res = await fetch(`${API_BASE}/license/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ licenseKey, machineId }),
+  });
+  return res.json();
+}
+
+// ── Analytics API (developer-only) ──
+
+export async function getAnalyticsSummary(
+  from?: string,
+  to?: string
+): Promise<{ success: boolean; summary: AnalyticsSummary; stores: StoreSummary[] }> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/analytics/summary${qs ? `?${qs}` : ""}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Analytics");
+  return res.json();
+}
+
+export async function getBestsellers(
+  from?: string,
+  to?: string,
+  limit?: number
+): Promise<{ success: boolean; bestsellers: Bestseller[] }> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (limit) params.set("limit", String(limit));
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/analytics/bestsellers${qs ? `?${qs}` : ""}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Bestseller");
+  return res.json();
+}
+
+export async function getTrends(
+  from?: string,
+  to?: string
+): Promise<{ success: boolean; trends: TrendPoint[] }> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/analytics/trends${qs ? `?${qs}` : ""}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Trends");
   return res.json();
 }

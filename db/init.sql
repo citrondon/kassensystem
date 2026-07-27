@@ -69,6 +69,49 @@ CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date DESC);
 
+-- ── License + Analytics Tables ──
+
+CREATE TABLE IF NOT EXISTS stores (
+    id            SERIAL PRIMARY KEY,
+    name          VARCHAR(200) NOT NULL,
+    location      VARCHAR(500),
+    machine_id    VARCHAR(255) NOT NULL UNIQUE,
+    license_key   VARCHAR(100) UNIQUE,
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id            SERIAL PRIMARY KEY,
+    license_key   VARCHAR(100) NOT NULL UNIQUE,
+    store_id      INTEGER REFERENCES stores(id) ON DELETE SET NULL,
+    plan          VARCHAR(50) NOT NULL DEFAULT 'trial',
+    status        VARCHAR(50) NOT NULL DEFAULT 'active',
+    started_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at    TIMESTAMP WITH TIME ZONE NOT NULL,
+    cancelled_at  TIMESTAMP WITH TIME ZONE,
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS analytics_snapshots (
+    id              SERIAL PRIMARY KEY,
+    store_id        INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    snapshot_date   DATE NOT NULL,
+    total_orders    INTEGER NOT NULL DEFAULT 0,
+    total_revenue   DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    total_discount  DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    top_products    JSONB NOT NULL DEFAULT '[]'::jsonb,
+    synced_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (store_id, snapshot_date)
+);
+
+-- admin user gets developer role
+UPDATE users SET role = 'developer' WHERE username = 'admin';
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_license_key ON subscriptions(license_key);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_store_id ON subscriptions(store_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_store_id ON analytics_snapshots(store_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_snapshot_date ON analytics_snapshots(snapshot_date);
+
 CREATE TABLE IF NOT EXISTS pgmigrations (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,

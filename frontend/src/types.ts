@@ -81,6 +81,50 @@ export interface ProductFormData {
 export interface User {
   id: number;
   username: string;
-  role: "manager" | "cashier";
+  role: "manager" | "cashier" | "developer";
+}
+
+// ── License types ──
+
+export type LicensePlan = "trial" | "basic" | "pro";
+export type LicenseStatus = "active" | "expired" | "cancelled" | "suspended";
+
+export interface LicenseInfo {
+  plan: LicensePlan;
+  status: LicenseStatus;
+  expiresAt: string;
+  tokenExpiresAt?: string;
+  storeId: number;
+}
+
+// ── Analytics types ──
+
+export interface AnalyticsSummary {
+  activeStores: number;
+  totalOrders: number;
+  totalRevenue: number;
+  totalDiscount: number;
+  dateRange: { from: string; to: string };
+}
+
+export interface StoreSummary {
+  id: number;
+  name: string;
+  location: string | null;
+  orders: number;
+  revenue: number;
+}
+
+export interface Bestseller {
+  product_name: string;
+  category: string;
+  total_quantity: number;
+  total_revenue: number;
+}
+
+export interface TrendPoint {
+  snapshot_date: string;
+  orders: number;
+  revenue: number;
 }
 

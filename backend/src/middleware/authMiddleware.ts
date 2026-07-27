@@ -33,7 +33,7 @@ export const requireManager = (req: Request, res: Response, next: NextFunction):
     return;
   }
 
-  if (req.user.role !== "manager") {
+  if (req.user.role !== "manager" && req.user.role !== "developer") {
     res.status(403).json({ success: false, error: "Zugriff verweigert. Manager-Rolle erforderlich." });
     return;
   }
