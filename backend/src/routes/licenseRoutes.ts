@@ -6,6 +6,8 @@ import {
   verifyLicense,
   getLicenseStatus,
   createLicenseKey,
+  listLicenseKeys,
+  updateLicenseKey,
 } from "../controllers/licenseController.js";
 
 const router = Router();
@@ -15,7 +17,9 @@ router.post("/activate", activateLicense);
 router.post("/verify", verifyLicense);
 router.get("/status", getLicenseStatus);
 
-// Developer-only: create new license keys
+// Developer-only: license key management
+router.get("/keys", authenticate, requireDeveloper, listLicenseKeys);
 router.post("/keys", authenticate, requireDeveloper, createLicenseKey);
+router.patch("/keys/:key", authenticate, requireDeveloper, updateLicenseKey);
 
 export default router;
