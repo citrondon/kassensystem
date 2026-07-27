@@ -24,15 +24,18 @@ async function seed() {
   const adminHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
   const cashierHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
+  // Upsert admin as developer, kasse as cashier
   await pool.query(
     `INSERT INTO users (username, password_hash, role) VALUES
-      ($1, $2, 'manager'),
+      ($1, $2, 'developer'),
       ($3, $4, 'cashier')
-     ON CONFLICT (username) DO NOTHING`,
+     ON CONFLICT (username) DO UPDATE SET
+       password_hash = EXCLUDED.password_hash,
+       role = EXCLUDED.role`,
     ["admin", adminHash, "kasse", cashierHash]
   );
 
-  console.log("Demo users seeded: admin (manager), kasse (cashier)");
+  console.log("Demo users seeded: admin (developer), kasse (cashier)");
   console.log(`Default password: ${DEFAULT_PASSWORD}`);
   await pool.end();
 }
