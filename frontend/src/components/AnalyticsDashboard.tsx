@@ -38,7 +38,7 @@ export default function AnalyticsDashboard() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [bestsellers, setBestsellers] = useState<Bestseller[]>([]);
-  详细的趋势点(TrendPoint[])
+  const [trends, setTrends] = useState<TrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
