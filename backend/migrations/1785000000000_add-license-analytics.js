@@ -38,7 +38,7 @@ export const up = (pgm) => {
     total_revenue: { type: "decimal(12,2)", notNull: true, default: 0 },
     total_discount: { type: "decimal(12,2)", notNull: true, default: 0 },
     // JSONB array: [{ "name": "Apfel", "category": "Obst", "quantity": 12, "revenue": 5.88 }, ...]
-    top_products: { type: "jsonb", notNull: true, default: "'[]'::jsonb" },
+    top_products: { type: "jsonb", notNull: true, default: pgm.func("'[]'::jsonb") },
     synced_at: { type: "timestamp with time zone", default: pgm.func("CURRENT_TIMESTAMP") },
   }, { ifNotExists: true });
 
