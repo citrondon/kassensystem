@@ -17,6 +17,41 @@ export interface LicenseTokenPayload {
 }
 
 /**
+ * POST /api/license/keys  (developer-only)
+ * Body: { plan?: "trial"|"basic"|"pro", durationDays?: number }
+ * Creates a new license key + subscription row.
+ */
+export const createLicenseKey = async (req: Request, res: Response): Promise<void> => {
+  const plan = (req.body.plan as string) || "trial";
+  const durationDays = Number(req.body.durationDays) || 365;
+
+  if (!["trial", "basic", "pro"].includes(plan)) {
+    res.status(400).json({ success: false, error: "plan muss trial, basic oder pro sein." });
+    return;
+  }
+
+  const licenseKey = generateLicenseKey();
+  const expiresAt = new Date(Date.now() + durationDays * 86400000);
+
+  try {
+    await pool.query(
+      `INSERT INTO subscriptions (license_key, plan, status, expires_at) VALUES ($1, $2, 'active', $3)`,
+      [licenseKey, plan, expiresAt.toISOString()]
+    );
+
+    res.json({
+      success: true,
+      licenseKey,
+      plan,
+      expiresAt: expiresAt.toISOString(),
+    });
+  } catch (error) {
+    console.error("Create license key error:", error);
+    res.status(500).json({ success: false, error: "Lizenzschlüssel konnte nicht erstellt werden." });
+  }
+};
+
+/**
  * POST /api/license/activate
  * Body: { licenseKey: string, storeName: string, machineId: string }
  * Registers a store, links the license key, returns a license token.
@@ -232,7 +267,7 @@ export function verifyLicenseToken(token: string): LicenseTokenPayload {
  * Generate a random license key (for developer use).
  */
 export function generateLicenseKey(): string {
-  const parts = [];
+  const parts: string[] = [];
   for (let i = 0; i < 4; i++) {
     parts.push(crypto.randomBytes(4).toString("hex").toUpperCase());
   }
