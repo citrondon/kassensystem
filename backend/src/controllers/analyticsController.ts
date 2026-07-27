@@ -139,12 +139,14 @@ export const getBestsellers = async (req: Request, res: Response): Promise<void>
   try {
     const result = await pool.query(
       `SELECT
-         jsonb_array_elements(top_products)->>'name'     AS product_name,
-         jsonb_array_elements(top_products)->>'category' AS category,
-         SUM((jsonb_array_elements(top_products)->>'quantity')::int) AS total_quantity,
-         SUM((jsonb_array_elements(top_products)->>'revenue')::numeric) AS total_revenue
+         elem->>'name'     AS product_name,
+         elem->>'category' AS category,
+         SUM((elem->>'quantity')::int)     AS total_quantity,
+         SUM((elem->>'revenue')::numeric)  AS total_revenue
        FROM analytics_snapshots
+       CROSS JOIN LATERAL jsonb_array_elements(top_products) AS elem
        WHERE snapshot_date BETWEEN $1 AND $2
+         AND jsonb_array_length(top_products) > 0
        GROUP BY product_name, category
        ORDER BY total_quantity DESC
        LIMIT $3`,
