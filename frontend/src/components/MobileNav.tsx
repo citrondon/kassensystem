@@ -9,11 +9,6 @@ interface Props {
   onChange: (view: View) => void;
 }
 
-/**
- * Mobile Bottom-Navigation – inspiriert vom "BazarStock"-Projekt eines Freundes.
- * Ergänzt die Desktop-Sidebar auf kleinen Screens mit einer klassischen
- * Touch-optimierten Bottom-Bar (max-width 480px-Style, aber mit unserem Design-System).
- */
 export default function MobileNav({ active, onChange }: Props) {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -49,7 +44,7 @@ export default function MobileNav({ active, onChange }: Props) {
       : []),
   ];
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white lg:hidden dark:border-slate-700 dark:bg-slate-900" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="mx-auto flex max-w-md">
         {items.map((item) => {
           const isActive = active === item.key;
@@ -59,11 +54,11 @@ export default function MobileNav({ active, onChange }: Props) {
               onClick={() => onChange(item.key)}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${
                 isActive
-                  ? "text-indigo-700"
-                  : "text-slate-400 hover:text-slate-600"
+                  ? "text-indigo-700 dark:text-indigo-400"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               }`}
             >
-              <span className={isActive ? "text-indigo-600" : ""}>
+              <span className={isActive ? "text-indigo-600 dark:text-indigo-400" : ""}>
                 {item.icon}
               </span>
               {item.label}

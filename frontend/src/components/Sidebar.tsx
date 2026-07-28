@@ -45,12 +45,12 @@ export default function Sidebar({ active, onChange }: Props) {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col items-stretch border-r border-slate-200 bg-white px-4 py-4 shadow-sm lg:flex">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col items-stretch border-r border-slate-200 bg-white px-4 py-4 shadow-sm lg:flex dark:border-slate-700 dark:bg-slate-900">
       <div className="mb-8 flex items-center justify-start gap-3 px-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
           <Store className="h-6 w-6" />
         </div>
-        <span className="text-lg font-bold text-slate-800">{t("posSystem")}</span>
+        <span className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("posSystem")}</span>
       </div>
 
       <nav className="flex flex-1 flex-col gap-2">
@@ -62,12 +62,12 @@ export default function Sidebar({ active, onChange }: Props) {
               onClick={() => onChange(item.key)}
               className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
                 isActive
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               }`}
               title={item.label}
             >
-              <span className={isActive ? "text-indigo-600" : "text-slate-400"}>
+              <span className={isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"}>
                 {item.icon}
               </span>
               <span>{item.label}</span>
