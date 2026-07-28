@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -33,7 +32,7 @@ export default function Header({ onOpenSettings }: Props) {
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Einstellungen</span>
+              <span className="hidden sm:inline">{t("settings")}</span>
             </button>
           )}
           <ThemeToggle />

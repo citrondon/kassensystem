@@ -5,7 +5,6 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { Store, User, Lock, Loader2 } from "lucide-react";
 
 export default function SetupView() {
-  const { login } = useAuth();
   const { t } = useI18n();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -18,12 +17,12 @@ export default function SetupView() {
     setError(null);
 
     if (password !== confirm) {
-      setError("Passwoerter stimmen nicht ueberein.");
+      setError(t("passwordMismatch"));
       return;
     }
 
     if (password.length < 4) {
-      setError("Passwort muss mindestens 4 Zeichen lang sein.");
+      setError(t("passwordTooShort"));
       return;
     }
 
@@ -37,16 +36,14 @@ export default function SetupView() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Setup fehlgeschlagen.");
+        setError(data.error || t("setupFailed"));
         return;
       }
 
-      // Auto-login with the new account
       localStorage.setItem("pos_auth_token", data.token);
-      // Reload to pick up the token
       window.location.reload();
     } catch {
-      setError("Netzwerkfehler beim Setup.");
+      setError(t("networkErrorSetup"));
     } finally {
       setLoading(false);
     }
@@ -59,75 +56,42 @@ export default function SetupView() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/40">
             <Store className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Willkommen!</h1>
-          <p className="text-slate-500 dark:text-slate-400">Erstellen Sie Ihr Besitzer-Konto</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("setupTitle")}</h1>
+          <p className="text-slate-500 dark:text-slate-400">{t("setupSubtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              {t("username")}
-            </label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("username")}</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="input pl-10"
-                placeholder="z.B. besitzer"
-                required
-              />
+              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="input pl-10" required />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              {t("password")}
-            </label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("password")}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input pl-10"
-                placeholder="••••••"
-                required
-              />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input pl-10" required />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Passwort bestätigen
-            </label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("confirmPassword")}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                className="input pl-10"
-                placeholder="••••••"
-                required
-              />
+              <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="input pl-10" required />
             </div>
           </div>
 
           {error && (
-            <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">
-              {error}
-            </div>
+            <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">{error}</div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary flex w-full items-center justify-center gap-2"
-          >
+          <button type="submit" disabled={loading} className="btn-primary flex w-full items-center justify-center gap-2">
             {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-            Besitzer-Konto erstellen
+            {t("setupButton")}
           </button>
         </form>
 

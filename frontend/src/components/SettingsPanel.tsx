@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredToken } from "../contexts/AuthContext";
+import { useI18n } from "../i18n/I18nContext";
 import { X, UserPlus, Trash2, Loader2 } from "lucide-react";
 
 interface UserRow {
@@ -12,6 +13,7 @@ interface UserRow {
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUsername, setNewUsername] = useState("");
@@ -23,9 +25,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/users", {
-        headers: { Authorization: `Bearer ${getStoredToken()}` },
-      });
+      const res = await fetch("/api/auth/users", { headers: { Authorization: `Bearer ${getStoredToken()}` } });
       const data = await res.json();
       if (data.success) setUsers(data.users);
     } catch {
@@ -35,14 +35,11 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
     }
   }, []);
 
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+  useEffect(() => { loadUsers(); }, [loadUsers]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError(""); setSuccess("");
     try {
       const res = await fetch("/api/auth/users", {
         method: "POST",
@@ -50,118 +47,64 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole }),
       });
       const data = await res.json();
-      if (!data.success) {
-        setError(data.error || "Fehler beim Anlegen.");
-        return;
-      }
-      setSuccess(`Benutzer "${newUsername}" angelegt.`);
-      setNewUsername("");
-      setNewPassword("");
-      loadUsers();
-    } catch {
-      setError("Netzwerkfehler.");
-    }
+      if (!data.success) { setError(data.error || t("createFailed")); return; }
+      setSuccess(t("userCreated").replace("{name}", newUsername));
+      setNewUsername(""); setNewPassword(""); loadUsers();
+    } catch { setError(t("networkErrorGeneric")); }
   }
 
   async function handleDelete(id: number, username: string) {
-    if (!confirm(`Benutzer "${username}" wirklich loeschen?`)) return;
-    setError("");
-    setSuccess("");
+    if (!confirm(t("deleteConfirmUser").replace("{name}", username))) return;
+    setError(""); setSuccess("");
     try {
-      const res = await fetch(`/api/auth/users/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${getStoredToken()}` },
-      });
+      const res = await fetch(`/api/auth/users/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${getStoredToken()}` } });
       const data = await res.json();
-      if (!data.success) {
-        setError(data.error || "Fehler beim Loeschen.");
-        return;
-      }
-      setSuccess(`Benutzer "${username}" geloescht.`);
+      if (!data.success) { setError(data.error || t("deleteFailed")); return; }
+      setSuccess(t("userDeleted").replace("{name}", username));
       loadUsers();
-    } catch {
-      setError("Netzwerkfehler.");
-    }
+    } catch { setError(t("networkErrorGeneric")); }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Einstellungen</h2>
-          <button onClick={onClose} className="btn-icon">
-            <X className="h-5 w-5" />
-          </button>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{t("settings")}</h2>
+          <button onClick={onClose} className="btn-icon"><X className="h-5 w-5" /></button>
         </div>
 
-        {/* Create new user */}
         <div className="mb-6 rounded-lg bg-slate-50 p-4 dark:bg-slate-900/50">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-            <UserPlus className="h-4 w-4" />
-            Neuen Benutzer anlegen
+            <UserPlus className="h-4 w-4" />{t("newUser")}
           </h3>
           <form onSubmit={handleCreate} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="Benutzername"
-                className="input"
-                required
-              />
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Passwort"
-                className="input"
-                required
-              />
+              <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder={t("usernamePlaceholder")} className="input" required />
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t("passwordPlaceholder")} className="input" required />
             </div>
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Rolle</label>
-                <select
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value)}
-                  className="select"
-                >
-                  <option value="cashier">Kassierer</option>
-                  <option value="manager">Manager</option>
+                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t("role")}</label>
+                <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="select">
+                  <option value="cashier">{t("cashierRoleLabel")}</option>
+                  <option value="manager">{t("managerRoleLabel")}</option>
                 </select>
               </div>
-              <button type="submit" className="btn-primary">
-                <UserPlus className="h-4 w-4" />
-                Anlegen
-              </button>
+              <button type="submit" className="btn-primary"><UserPlus className="h-4 w-4" />{t("createButton")}</button>
             </div>
           </form>
         </div>
 
-        {error && (
-          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">{error}</p>
-        )}
-        {success && (
-          <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">{success}</p>
-        )}
+        {error && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">{error}</p>}
+        {success && <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">{success}</p>}
 
-        {/* User list */}
-        <h3 className="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300">Benutzerübersicht</h3>
+        <h3 className="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300">{t("userOverview")}</h3>
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-          </div>
+          <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
         ) : (
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {users.map((u) => (
-              <div
-                key={u.id}
-                className="flex items-center justify-between rounded-lg border border-slate-200 p-3 dark:border-slate-700"
-              >
+              <div key={u.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                 <div>
                   <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{u.username}</span>
                   <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -169,14 +112,11 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
                     u.role === "manager" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" :
                     "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                   }`}>
-                    {u.role === "developer" ? "Developer" : u.role === "manager" ? "Manager" : "Kassierer"}
+                    {u.role === "developer" ? "Developer" : u.role === "manager" ? t("managerRoleLabel") : t("cashierRoleLabel")}
                   </span>
                 </div>
                 {u.id !== user?.id && (
-                  <button
-                    onClick={() => handleDelete(u.id, u.username)}
-                    className="rounded p-1.5 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/30"
-                  >
+                  <button onClick={() => handleDelete(u.id, u.username)} className="rounded p-1.5 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/30">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 )}
