@@ -6,7 +6,7 @@ services:
     buildCommand: |
       cd backend && npm install && npm run build
       cd ../frontend && npm install && npm run build
-    startCommand: cd backend && node scripts/migrate.cjs up && node scripts/seedUsers.cjs && node dist/server.js
+    startCommand: cd backend && node scripts/migrate.cjs up && node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
