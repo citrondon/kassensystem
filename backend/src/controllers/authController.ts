@@ -87,10 +87,6 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
 
 // ── Setup: first owner account ──
 
-/**
- * GET /api/auth/setup-status
- * Returns whether any user exists (if not, setup is needed).
- */
 export const getSetupStatus = async (_req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query("SELECT COUNT(*) AS count FROM users");
@@ -102,11 +98,6 @@ export const getSetupStatus = async (_req: Request, res: Response): Promise<void
   }
 };
 
-/**
- * POST /api/auth/setup
- * Body: { username, password, storeName? }
- * Creates the first owner (manager) account. Only works if no users exist.
- */
 export const setupOwner = async (req: Request, res: Response): Promise<void> => {
   const { username, password } = req.body;
 
@@ -121,7 +112,6 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
   }
 
   try {
-    // Check if users already exist
     const countResult = await pool.query("SELECT COUNT(*) AS count FROM users");
     if (Number(countResult.rows[0].count) > 0) {
       res.status(403).json({ success: false, error: "Setup bereits abgeschlossen." });
@@ -154,10 +144,6 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
 
 // ── User Management (manager/developer only) ──
 
-/**
- * GET /api/users
- * Lists all users (excluding password hashes).
- */
 export const listUsers = async (_req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query(
@@ -170,11 +156,6 @@ export const listUsers = async (_req: Request, res: Response): Promise<void> => 
   }
 };
 
-/**
- * POST /api/users
- * Body: { username, password, role?: 'cashier'|'manager' }
- * Creates a new user (cashier by default).
- */
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   const { username, password, role } = req.body;
 
@@ -214,15 +195,10 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 
 /**
  * DELETE /api/users/:id
- * Deletes a user. Cannot delete yourself.
+ * Deletes a user. Self-deletion allowed (useful for factory reset).
  */
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   const userId = Number(req.params.id);
-
-  if (req.user?.userId === userId) {
-    res.status(400).json({ success: false, error: "Sie koennen sich nicht selbst loeschen." });
-    return;
-  }
 
   try {
     const result = await pool.query(`DELETE FROM users WHERE id = $1 RETURNING id`, [userId]);
