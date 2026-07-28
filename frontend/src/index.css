@@ -6,31 +6,8 @@ body {
   @apply bg-gray-50 text-slate-900 antialiased;
 }
 
-@layer components {
-  .btn-primary {
-    @apply rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300;
-  }
-  .btn-secondary {
-    @apply rounded-xl bg-white border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-95;
-  }
-  .btn-danger {
-    @apply rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 active:scale-95;
-  }
-  .btn-success {
-    @apply rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300;
-  }
-  .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
-  }
-  .panel {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden;
-  }
-  .input {
-    @apply w-full rounded-xl border border-slate-300 px-4 py-3 text-base transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200;
-  }
-  .badge {
-    @apply rounded-full px-2.5 py-0.5 text-xs font-semibold;
-  }
+.dark body {
+  @apply bg-slate-900 text-slate-100;
 }
 
 @layer components {
@@ -39,31 +16,35 @@ body {
   }
 
   .btn-secondary {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-[0.98];
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-[0.98] dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
   }
 
   .btn-danger {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-100 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-200 active:scale-[0.98];
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-100 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-200 active:scale-[0.98] dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60;
   }
 
   .btn-icon {
-    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200;
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200;
   }
 
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800;
   }
 
   .card-elevated {
-    @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md;
+    @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800;
   }
 
   .input {
-    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200;
+    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500;
   }
 
   .select {
-    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200;
+    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200;
+  }
+
+  .panel {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden dark:border-slate-700 dark:bg-slate-800;
   }
 
   .badge {
@@ -71,23 +52,23 @@ body {
   }
 
   .badge-success {
-    @apply badge bg-emerald-100 text-emerald-700;
+    @apply badge bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300;
   }
 
   .badge-warning {
-    @apply badge bg-amber-100 text-amber-700;
+    @apply badge bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300;
   }
 
   .badge-danger {
-    @apply badge bg-red-100 text-red-700;
+    @apply badge bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300;
   }
 
   .badge-info {
-    @apply badge bg-indigo-100 text-indigo-700;
+    @apply badge bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300;
   }
 
   .table-header {
-    @apply bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-900/50 dark:text-slate-400;
   }
 }
 
