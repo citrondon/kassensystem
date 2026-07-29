@@ -1,21 +1,20 @@
 /**
  * Wipe users + seed fresh demo license key + developer account.
- * - Wipes all users (triggers setup flow for store owner)
+ * - Wipes all users
  * - Seeds a developer account (can see Analytics tab)
- * - Seeds a 1-year Pro license key for the store owner
- *
- * Setup flow logic: needsSetup = true when no manager/developer exists.
- * The developer account is always present (separate from store owner).
+ * - Seeds a 1-year Pro license key for store owner
  */
-export const up = (pgm) => {
+const bcrypt = require("bcrypt");
+
+export const up = async (pgm) => {
   // Wipe all users
   pgm.sql(`DELETE FROM users`);
 
-  // Seed developer account (always present, can access Analytics)
-  // Password: dev12345
+  // Seed developer account — hash generated at migration runtime
+  const devHash = await bcrypt.hash("dev12345", 10);
   pgm.sql(`
     INSERT INTO users (username, password_hash, role)
-    VALUES ('developer', '$2b$10$pornHHlI/kZaZPR7/K/PKuwRp5rv9fSn1NVwgStcf4KTPGW89h4S2', 'developer')
+    VALUES ('developer', '${devHash}', 'developer')
   `);
 
   // Create fresh 1-year Pro license key for store owner
