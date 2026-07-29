@@ -26,9 +26,23 @@ function AppContent() {
   const { user, loading } = useAuth();
   const { state: licenseState } = useLicense();
 
+  // Hash-based store detail navigation
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [view]);
+    const handleHash = () => {
+      const match = window.location.hash.match(/^#store-(\d+)$/);
+      if (match) {
+        const storeId = Number(match[1]);
+        // Find store name from current state if possible, else use ID
+        setSelectedStore((prev) => (prev?.id === storeId ? prev : { id: storeId, name: `Store ${storeId}` }));
+        setView("store-detail");
+      } else if (view === "store-detail") {
+        setView("analytics");
+      }
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
 
   // Check if setup is needed (no users exist)
   useEffect(() => {

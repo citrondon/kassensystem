@@ -115,8 +115,8 @@ export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: 
     try { await updateLicenseKey(key, action, days); loadKeys(); } catch { /* ignore */ }
   }
 
-  function openStoreDetail(storeId: number, storeName: string) {
-    onSelectStore?.(storeId, storeName);
+  function openStoreDetail(storeId: number, _storeName: string) {
+    window.location.hash = `#store-${storeId}`;
   }
 
   function copyKey(key: string) {
