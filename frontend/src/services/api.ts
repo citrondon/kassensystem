@@ -271,6 +271,22 @@ export async function getTrends(
   return res.json();
 }
 
+export async function getStoreDetail(
+  storeId: number,
+  from?: string,
+  to?: string
+): Promise<{ success: boolean; store: StoreSummary; snapshots: { snapshot_date: string; total_orders: number; total_revenue: number; total_discount: number; top_products: { name: string; category: string; quantity: number; revenue: number }[] }[] }> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/analytics/stores/${storeId}${qs ? `?${qs}` : ""}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Store-Details");
+  return res.json();
+}
+
 export async function localSync(
   from?: string,
   to?: string

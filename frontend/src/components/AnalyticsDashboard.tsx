@@ -10,6 +10,7 @@ import {
   getAnalyticsSummary,
   getBestsellers,
   getTrends,
+  getStoreDetail,
   localSync,
   listLicenseKeys,
   createLicenseKey,
@@ -32,6 +33,8 @@ import {
   Database,
   Copy,
   Check,
+  ArrowLeft,
+  Eye,
 } from "lucide-react";
 
 export default function AnalyticsDashboard() {
@@ -42,6 +45,18 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
+  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
+  const [storeDetail, setStoreDetail] = useState<{
+    store: StoreSummary;
+    snapshots: {
+      snapshot_date: string;
+      total_orders: number;
+      total_revenue: number;
+      total_discount: number;
+      top_products: { name: string; category: string; quantity: number; revenue: number }[];
+    }[];
+  } | null>(null);
+  const [storeLoading, setStoreLoading] = useState(false);
   const { t, lang } = useI18n();
   const locale = lang === "fr" ? "fr-FR" : "de-DE";
 
@@ -112,6 +127,95 @@ export default function AnalyticsDashboard() {
 
   async function handleKeyAction(key: string, action: "extend" | "cancel" | "reactivate", days?: number) {
     try { await updateLicenseKey(key, action, days); loadKeys(); } catch { /* ignore */ }
+  }
+
+  async function openStoreDetail(storeId: number) {
+    setSelectedStoreId(storeId);
+    setStoreLoading(true);
+    try {
+      const res = await getStoreDetail(storeId);
+      if (res.success) setStoreDetail(res);
+    } catch {
+      setStoreDetail(null);
+    } finally {
+      setStoreLoading(false);
+    }
+  }
+
+  if (selectedStoreId !== null) {
+    const store = storeDetail?.store;
+    const snapshots = storeDetail?.snapshots || [];
+    const storeTotalRevenue = snapshots.reduce((sum, s) => sum + Number(s.total_revenue), 0);
+    const storeTotalOrders = snapshots.reduce((sum, s) => sum + Number(s.total_orders), 0);
+    const storeBestsellers = aggregateBestsellers(snapshots);
+    const storeMaxRevenue = Math.max(...snapshots.map((s) => Number(s.total_revenue)), 1);
+
+    return (
+      <div className="space-y-6">
+        <button onClick={() => { setSelectedStoreId(null); setStoreDetail(null); }} className="btn-secondary flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" />{t("storeCol")}: {store?.name || "..."}
+        </button>
+
+        {storeLoading ? (
+          <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
+              <StatCard label={t("totalOrdersAll")} value={String(storeTotalOrders)} icon={<BarChart3 className="h-6 w-6 text-blue-600" />} bg="bg-blue-50" />
+              <StatCard label={t("totalRevenueAll")} value={`${fmt(storeTotalRevenue)} ${currency}`} icon={<TrendingUp className="h-6 w-6 text-emerald-600" />} bg="bg-emerald-50" />
+            </div>
+
+            <div className="panel p-5 dark:bg-slate-800">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-slate-100">
+                <Crown className="h-5 w-5 text-amber-500" />{t("bestsellers")}
+              </h2>
+              {storeBestsellers.length === 0 ? (
+                <p className="py-4 text-center text-sm text-slate-400">{t("noDataSync")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {storeBestsellers.map((item, i) => (
+                    <li key={item.product_name} className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 dark:border-slate-700">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{item.product_name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{item.category}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{Number(item.total_quantity)}×</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{fmt(Number(item.total_revenue))} {currency}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="panel p-5 dark:bg-slate-800">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-slate-100">
+                <TrendingUp className="h-5 w-5 text-emerald-500" />{t("salesTrend")}
+              </h2>
+              {snapshots.length === 0 ? (
+                <p className="py-4 text-center text-sm text-slate-400">{t("noDataSync")}</p>
+              ) : (
+                <div className="flex h-48 items-end gap-1 overflow-x-auto">
+                  {snapshots.map((d) => {
+                    const pct = (Number(d.total_revenue) / storeMaxRevenue) * 100;
+                    return (
+                      <div key={d.snapshot_date} className="group relative flex flex-1 flex-col items-center justify-end" style={{ minWidth: "24px" }}>
+                        <div className="w-full rounded-t bg-gradient-to-t from-emerald-400 to-emerald-500 transition group-hover:from-emerald-500 group-hover:to-emerald-600" style={{ height: `${Math.max(pct, 2)}%` }} />
+                        <div className="absolute -top-8 hidden whitespace-nowrap rounded bg-slate-800 px-2 py-1 text-xs text-white group-hover:block">
+                          {d.snapshot_date}: {fmt(Number(d.total_revenue))} {currency}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
 
   function copyKey(key: string) {
@@ -218,7 +322,8 @@ export default function AnalyticsDashboard() {
                       <th className="pb-2 pr-4">{t("storeCol")}</th>
                       <th className="pb-2 pr-4">{t("locationCol")}</th>
                       <th className="pb-2 pr-4 text-right">{t("ordersCol")}</th>
-                      <th className="pb-2 text-right">{t("revenueCol")}</th>
+                      <th className="pb-2 pr-4 text-right">{t("revenueCol")}</th>
+                      <th className="pb-2 text-right">{t("actions_col")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -227,7 +332,12 @@ export default function AnalyticsDashboard() {
                         <td className="py-3 pr-4 font-medium text-slate-800 dark:text-slate-200">{s.name}</td>
                         <td className="py-3 pr-4 text-slate-500 dark:text-slate-400">{s.location || "—"}</td>
                         <td className="py-3 pr-4 text-right text-slate-700 dark:text-slate-300">{Number(s.orders)}</td>
-                        <td className="py-3 text-right font-bold text-slate-800 dark:text-slate-200">{fmt(Number(s.revenue))} {currency}</td>
+                        <td className="py-3 pr-4 text-right font-bold text-slate-800 dark:text-slate-200">{fmt(Number(s.revenue))} {currency}</td>
+                        <td className="py-3 text-right">
+                          <button onClick={() => openStoreDetail(s.id)} className="rounded p-1.5 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30" title="Details">
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -352,4 +462,29 @@ function StatCard({ label, value, icon, bg }: { label: string; value: string; ic
       </div>
     </div>
   );
+}
+
+function aggregateBestsellers(
+  snapshots: { top_products: { name: string; category: string; quantity: number; revenue: number }[] }[]
+): { product_name: string; category: string; total_quantity: number; total_revenue: number }[] {
+  const map = new Map<string, { product_name: string; category: string; total_quantity: number; total_revenue: number }>();
+
+  for (const snap of snapshots) {
+    for (const p of snap.top_products || []) {
+      const existing = map.get(p.name);
+      if (existing) {
+        existing.total_quantity += Number(p.quantity);
+        existing.total_revenue += Number(p.revenue);
+      } else {
+        map.set(p.name, {
+          product_name: p.name,
+          category: p.category,
+          total_quantity: Number(p.quantity),
+          total_revenue: Number(p.revenue),
+        });
+      }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.total_quantity - a.total_quantity);
 }
