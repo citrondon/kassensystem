@@ -1,10 +1,10 @@
 /**
  * Reset users and seed fresh demo data.
- * CommonJS migration for node-pg-migrate compatibility.
+ * ESM migration — package.json has "type": "module".
  */
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 
-exports.up = async (pgm) => {
+export const up = async (pgm) => {
   // Wipe all users
   pgm.sql(`DELETE FROM users`);
 
@@ -26,7 +26,7 @@ exports.up = async (pgm) => {
   `);
 };
 
-exports.down = (pgm) => {
+export const down = (pgm) => {
   pgm.sql(`DELETE FROM users`);
   pgm.sql(`DELETE FROM subscriptions WHERE license_key = 'MC-PRO-2026-DEMO-KEY'`);
 };

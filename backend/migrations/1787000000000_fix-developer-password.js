@@ -1,11 +1,9 @@
 /**
- * Fix developer account password hash (CommonJS).
- * - Deletes any existing developer user
- * - Re-creates developer with a fresh bcrypt hash
+ * Fix developer account password hash (ESM).
  */
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 
-exports.up = async (pgm) => {
+export const up = async (pgm) => {
   pgm.sql(`DELETE FROM users WHERE username = 'developer'`);
   const devHash = await bcrypt.hash("dev12345", 10);
   pgm.sql(`
@@ -14,6 +12,6 @@ exports.up = async (pgm) => {
   `);
 };
 
-exports.down = (pgm) => {
+export const down = (pgm) => {
   pgm.sql(`DELETE FROM users WHERE username = 'developer'`);
 };
