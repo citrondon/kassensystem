@@ -63,7 +63,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+        className="mx-auto w-full max-w-[calc(100%-2rem)] sm:max-w-md rounded-2xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">

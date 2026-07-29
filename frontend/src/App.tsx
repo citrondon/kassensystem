@@ -86,7 +86,7 @@ function AppContent() {
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <Header onOpenSettings={() => setShowSettings(true)} />
       <Sidebar active={view === "store-detail" ? "analytics" : view} onChange={setView} />
-      <div className="p-3 pb-20 pt-16 lg:ml-64 lg:p-6 lg:pb-6 lg:pt-16">
+      <div className="p-3 pb-28 pt-16 lg:ml-64 lg:p-6 lg:pb-6 lg:pt-16">
         <main className="mx-auto w-full max-w-[1440px]">
           {view === "dashboard" && <Dashboard onNavigate={setView} />}
           {view === "cashier" && <CashierInterface />}

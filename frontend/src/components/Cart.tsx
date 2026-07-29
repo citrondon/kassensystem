@@ -120,7 +120,7 @@ export default function Cart({
         {cart.length > 0 && (
           <div className="rounded-xl border border-slate-200 bg-white shadow-lg">
             {/* Collapsible items */}
-            <ul className="max-h-48 divide-y divide-slate-50 overflow-y-auto scrollbar-thin">
+            <ul className="max-h-36 divide-y divide-slate-50 overflow-y-auto scrollbar-thin">
               {cart.map((item) => (
                 <li key={item.id} className="flex items-center gap-2 py-2 px-3">
                   <div className="flex-1 min-w-0">
