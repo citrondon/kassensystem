@@ -38,7 +38,10 @@ app.use("/uploads", express.static(UPLOAD_DIR));
 
 // In production: serve built frontend
 if (isProduction) {
-  const frontendDist = path.join(__dirname, "..", "..", "frontend", "dist");
+  // Prefer bundled dist-static (committed), fall back to source frontend/dist
+  const frontendDist = fs.existsSync(path.join(__dirname, "..", "dist-static"))
+    ? path.join(__dirname, "..", "dist-static")
+    : path.join(__dirname, "..", "..", "frontend", "dist");
   app.use(express.static(frontendDist));
   // SPA fallback: non-API routes → index.html
   app.get(/^\/(?!api|health|uploads).*/, (_req, res) => {
