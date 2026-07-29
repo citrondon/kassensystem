@@ -1,10 +1,56 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLicense } from "../contexts/LicenseContext";
 import { useI18n } from "../i18n/I18nContext";
-import { KeyRound, Loader2, WifiOff, AlertCircle, Store } from "lucide-react";
+import { KeyRound, Loader2, WifiOff, AlertCircle, Store, Check, RotateCcw } from "lucide-react";
+
+/**
+ * Schritt-Anzeige für den Onboarding-Wizard (Schritt 1: Lizenz, Schritt 2: Konto).
+ * Wird von LicenseActivation (Schritt 1) und SetupView (Schritt 2) verwendet,
+ * damit der Übergang nach erfolgreicher Aktivierung wie ein Wizard wirkt.
+ */
+export function WizardSteps({ current }: { current: 1 | 2 }) {
+  const { t } = useI18n();
+  const steps = [t("wizardStepLicense"), t("wizardStepAccount")];
+  return (
+    <div className="flex items-center justify-center gap-2 text-xs">
+      {steps.map((label, i) => {
+        const n = (i + 1) as 1 | 2;
+        const active = n === current;
+        const done = n < current;
+        return (
+          <div key={n} className="flex items-center gap-2">
+            {i > 0 && <div className="h-px w-6 bg-slate-300 dark:bg-slate-600" />}
+            <div
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${
+                active
+                  ? "bg-indigo-100 font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                  : done
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-slate-400 dark:text-slate-500"
+              }`}
+            >
+              <span
+                className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${
+                  active
+                    ? "bg-indigo-600 text-white"
+                    : done
+                      ? "bg-emerald-500 text-white"
+                      : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                }`}
+              >
+                {done ? <Check className="h-3 w-3" /> : n}
+              </span>
+              {label}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function LicenseActivation() {
-  const { state, info, activate, retry } = useLicense();
+  const { state, info, activate, retry, reset } = useLicense();
   const { t, lang } = useI18n();
   const [licenseKey, setLicenseKey] = useState("");
   const [storeName, setStoreName] = useState("");
@@ -12,12 +58,23 @@ export default function LicenseActivation() {
   const [loading, setLoading] = useState(false);
   const locale = lang === "fr" ? "fr-FR" : "de-DE";
 
+  // Aktivierungs-Link: ?key=...&store=... aus der URL vorbelegen
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get("key");
+    const store = params.get("store");
+    if (key) setLicenseKey(key);
+    if (store) setStoreName(store);
+  }, []);
+
   async function handleActivate(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
       await activate(licenseKey.trim(), storeName.trim());
+      // Key nach erfolgreicher Aktivierung aus der Adresszeile entfernen
+      window.history.replaceState(null, "", window.location.pathname);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("licenseActivationFailed"));
     } finally {
@@ -39,6 +96,9 @@ export default function LicenseActivation() {
             </div>
           </div>
           <button onClick={retry} className="btn-primary w-full">{t("retry")}</button>
+          <button onClick={reset} className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <RotateCcw className="h-3 w-3" />{t("licenseReset")}
+          </button>
         </div>
       </div>
     );
@@ -58,6 +118,9 @@ export default function LicenseActivation() {
             </div>
           </div>
           <button onClick={retry} className="btn-primary w-full">{t("retry")}</button>
+          <button onClick={reset} className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <RotateCcw className="h-3 w-3" />{t("licenseReset")}
+          </button>
         </div>
       </div>
     );
@@ -71,7 +134,7 @@ export default function LicenseActivation() {
             <Store className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("posSystem")}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t("licenseActivate")}</p>
+          <WizardSteps current={1} />
         </div>
 
         <form onSubmit={handleActivate} className="space-y-4">
@@ -107,6 +170,12 @@ export default function LicenseActivation() {
             {t("licenseActivate")}
           </button>
         </form>
+
+        {info && (
+          <button onClick={reset} className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+            <RotateCcw className="h-3 w-3" />{t("licenseReset")}
+          </button>
+        )}
       </div>
     </div>
   );

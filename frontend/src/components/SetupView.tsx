@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { WizardSteps } from "./LicenseActivation";
 import { Store, User, Lock, Loader2 } from "lucide-react";
 
 export default function SetupView() {
@@ -58,6 +59,9 @@ export default function SetupView() {
           </div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("setupTitle")}</h1>
           <p className="text-slate-500 dark:text-slate-400">{t("setupSubtitle")}</p>
+          <div className="mt-3">
+            <WizardSteps current={2} />
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

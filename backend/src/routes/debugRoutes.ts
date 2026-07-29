@@ -1,9 +1,12 @@
 import { Request, Response, Router } from "express";
 import pool from "../utils/pool.js";
+import { authenticate } from "../middleware/authMiddleware.js";
+import { requireDeveloper } from "../middleware/developerMiddleware.js";
 
 const router = Router();
 
-router.get("/status", async (_req: Request, res: Response) => {
+// Developer-only: exposes users (hash prefixes), migrations and license keys
+router.get("/status", authenticate, requireDeveloper, async (_req: Request, res: Response) => {
   try {
     const usersResult = await pool.query(
       `SELECT id, username, role, substring(password_hash for 20) as hash_prefix FROM users ORDER BY id`

@@ -20,7 +20,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET Umgebungsvariable muss gesetzt sein.");
 }
-const JWT_EXPIRES_IN = "8h";
+// Token-Laufzeit per Env konfigurierbar (Default 8h, z.B. "8h", "24h", "7d")
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "8h") as jwt.SignOptions["expiresIn"];
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   const { username, password } = req.body;
@@ -80,8 +81,12 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
   try {
     const payload = verifyToken(authHeader.slice(7));
     res.json({ success: true, user: payload });
-  } catch {
-    res.status(401).json({ success: false, error: "Token ungueltig." });
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ success: false, error: "Token abgelaufen.", errorCode: "token_expired" });
+      return;
+    }
+    res.status(401).json({ success: false, error: "Token ungueltig.", errorCode: "token_invalid" });
   }
 };
 
@@ -193,6 +198,34 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     }
     console.error("Create user error:", error);
     res.status(500).json({ success: false, error: "Benutzer anlegen fehlgeschlagen." });
+  }
+};
+
+/**
+ * POST /api/auth/factory-reset
+ * Developer-only. Deletes all manager accounts (optionally cashiers too via
+ * body flag includeCashiers). Developer accounts are never touched.
+ * Re-opens the setup flow (needsSetup = true) without migration/redeploy.
+ */
+export const factoryReset = async (req: Request, res: Response): Promise<void> => {
+  const includeCashiers = req.body?.includeCashiers === true;
+
+  try {
+    const roles = includeCashiers ? ["manager", "cashier"] : ["manager"];
+    const result = await pool.query(
+      `DELETE FROM users WHERE role = ANY($1::text[]) RETURNING id`,
+      [roles]
+    );
+
+    res.json({
+      success: true,
+      deletedCount: result.rows.length,
+      includeCashiers,
+      needsSetup: true,
+    });
+  } catch (error) {
+    console.error("Factory reset error:", error);
+    res.status(500).json({ success: false, error: "Factory-Reset fehlgeschlagen." });
   }
 };
 

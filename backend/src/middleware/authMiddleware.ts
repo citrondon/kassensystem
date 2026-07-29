@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import { verifyToken, JwtPayload } from "../controllers/authController.js";
 
 declare global {
@@ -22,8 +23,12 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
   try {
     req.user = verifyToken(token);
     next();
-  } catch {
-    res.status(401).json({ success: false, error: "Token ungueltig." });
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ success: false, error: "Token abgelaufen.", errorCode: "token_expired" });
+      return;
+    }
+    res.status(401).json({ success: false, error: "Token ungueltig.", errorCode: "token_invalid" });
   }
 };
 

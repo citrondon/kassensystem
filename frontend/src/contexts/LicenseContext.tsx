@@ -9,6 +9,7 @@ interface LicenseContextValue {
   info: LicenseInfo | null;
   activate: (licenseKey: string, storeName: string) => Promise<void>;
   retry: () => void;
+  reset: () => void;
 }
 
 const LicenseContext = createContext<LicenseContextValue | null>(null);
@@ -126,8 +127,17 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     checkLicense();
   }
 
+  // Lizenz gezielt zurücksetzen (localStorage + State) — kein Cache-Tricksen nötig
+  function reset() {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(INFO_KEY);
+    localStorage.removeItem(LICENSE_KEY_STORAGE);
+    setInfo(null);
+    setState("none");
+  }
+
   return (
-    <LicenseContext.Provider value={{ state, info, activate, retry }}>
+    <LicenseContext.Provider value={{ state, info, activate, retry, reset }}>
       {children}
     </LicenseContext.Provider>
   );

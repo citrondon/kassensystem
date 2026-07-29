@@ -1,16 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import LanguageSwitcher from "./LanguageSwitcher";
-import { Lock, User, Loader2 } from "lucide-react";
+import { Lock, User, Loader2, Info, AlertCircle } from "lucide-react";
 
 export default function LoginView() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const { t } = useI18n();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [setupCompleted, setSetupCompleted] = useState(false);
+
+  // Hinweis anzeigen, wenn das Erst-Setup bereits abgeschlossen ist
+  useEffect(() => {
+    fetch("/api/auth/setup-status")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.needsSetup === false) {
+          setSetupCompleted(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +48,13 @@ export default function LoginView() {
           <h1 className="text-2xl font-bold text-slate-800">{t("appTitle")}</h1>
           <p className="text-slate-500">{t("login")}</p>
         </div>
+
+        {sessionExpired && (
+          <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            {t("sessionExpired")}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -93,6 +113,13 @@ export default function LoginView() {
           </p>
           <LanguageSwitcher />
         </div>
+
+        {setupCompleted && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            {t("setupCompletedHint")}
+          </div>
+        )}
       </div>
     </div>
   );

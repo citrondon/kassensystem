@@ -7,6 +7,7 @@ interface AuthContextValue {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  sessionExpired: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -17,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -31,11 +33,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Auto-Logout bei abgelaufenem Token (vom API-Client getriggert)
+  useEffect(() => {
+    const handler = () => {
+      localStorage.removeItem(STORAGE_KEY);
+      setToken(null);
+      setUser(null);
+      setSessionExpired(true);
+    };
+    window.addEventListener("pos:session-expired", handler);
+    return () => window.removeEventListener("pos:session-expired", handler);
+  }, []);
+
   async function fetchUser(authToken: string) {
     const res = await fetch("/api/auth/me", {
       headers: { Authorization: `Bearer ${authToken}` },
     });
-    if (!res.ok) throw new Error("Token ungueltig");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      if (body?.errorCode === "token_expired") {
+        setSessionExpired(true);
+      }
+      throw new Error("Token ungueltig");
+    }
     const data = await res.json();
     setUser(data.user);
     setLoading(false);
@@ -56,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, data.token);
     setToken(data.token);
     setUser(data.user);
+    setSessionExpired(false);
   }
 
   function logout() {
@@ -65,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, sessionExpired }}>
       {children}
     </AuthContext.Provider>
   );

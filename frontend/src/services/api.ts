@@ -29,6 +29,25 @@ function licenseHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/**
+ * fetch-Wrapper für authentifizierte Calls: erkennt errorCode "token_expired"
+ * und triggert Auto-Logout über das AuthContext-Event "pos:session-expired".
+ */
+async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(url, init);
+  if (res.status === 401) {
+    try {
+      const body = await res.clone().json();
+      if (body?.errorCode === "token_expired") {
+        window.dispatchEvent(new Event("pos:session-expired"));
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return res;
+}
+
 export async function getProducts(
   searchTerm?: string,
   categoryId?: number | null
@@ -51,7 +70,7 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function createProduct(data: ProductFormData): Promise<Product> {
-  const res = await fetch(`${API_BASE}/products`, {
+  const res = await authFetch(`${API_BASE}/products`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
@@ -76,7 +95,7 @@ export async function updateProduct(
   data: ProductFormData,
   imageUrl?: string | null
 ): Promise<Product> {
-  const res = await fetch(`${API_BASE}/products/${id}`, {
+  const res = await authFetch(`${API_BASE}/products/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
@@ -98,7 +117,7 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/products/${id}`, {
+  const res = await authFetch(`${API_BASE}/products/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -111,7 +130,7 @@ export async function deleteProduct(id: number): Promise<void> {
 export async function uploadProductImage(id: number, file: File): Promise<Product> {
   const formData = new FormData();
   formData.append("image", file);
-  const res = await fetch(`${API_BASE}/products/${id}/image`, {
+  const res = await authFetch(`${API_BASE}/products/${id}/image`, {
     method: "POST",
     headers: authHeaders(),
     body: formData,
@@ -129,7 +148,7 @@ export async function checkout(
   amountTendered?: number,
   discountAmount?: number
 ): Promise<CheckoutResponse> {
-  const res = await fetch(`${API_BASE}/checkout`, {
+  const res = await authFetch(`${API_BASE}/checkout`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
@@ -192,7 +211,7 @@ export async function verifyLicense(
 // ── License Management API (developer-only) ──
 
 export async function listLicenseKeys(): Promise<{ success: boolean; keys: LicenseKeyRow[] }> {
-  const res = await fetch(`${API_BASE}/license/keys`, { headers: authHeaders() });
+  const res = await authFetch(`${API_BASE}/license/keys`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Lizenzschlüssel");
   return res.json();
 }
@@ -201,7 +220,7 @@ export async function createLicenseKey(
   plan: string,
   durationDays: number
 ): Promise<{ success: boolean; licenseKey: string; plan: string; expiresAt: string }> {
-  const res = await fetch(`${API_BASE}/license/keys`, {
+  const res = await authFetch(`${API_BASE}/license/keys`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ plan, durationDays }),
@@ -214,10 +233,23 @@ export async function updateLicenseKey(
   action: "extend" | "cancel" | "reactivate",
   durationDays?: number
 ): Promise<{ success: boolean; license: LicenseKeyRow }> {
-  const res = await fetch(`${API_BASE}/license/keys/${key}`, {
+  const res = await authFetch(`${API_BASE}/license/keys/${key}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ action, durationDays }),
+  });
+  return res.json();
+}
+
+// ── Factory Reset API (developer-only) ──
+
+export async function factoryReset(
+  includeCashiers = false
+): Promise<{ success: boolean; deletedCount?: number; needsSetup?: boolean; error?: string }> {
+  const res = await authFetch(`${API_BASE}/auth/factory-reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ includeCashiers }),
   });
   return res.json();
 }
@@ -232,7 +264,7 @@ export async function getAnalyticsSummary(
   if (from) params.set("from", from);
   if (to) params.set("to", to);
   const qs = params.toString();
-  const res = await fetch(`${API_BASE}/analytics/summary${qs ? `?${qs}` : ""}`, {
+  const res = await authFetch(`${API_BASE}/analytics/summary${qs ? `?${qs}` : ""}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Analytics");
@@ -249,7 +281,7 @@ export async function getBestsellers(
   if (to) params.set("to", to);
   if (limit) params.set("limit", String(limit));
   const qs = params.toString();
-  const res = await fetch(`${API_BASE}/analytics/bestsellers${qs ? `?${qs}` : ""}`, {
+  const res = await authFetch(`${API_BASE}/analytics/bestsellers${qs ? `?${qs}` : ""}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Bestseller");
@@ -264,7 +296,7 @@ export async function getTrends(
   if (from) params.set("from", from);
   if (to) params.set("to", to);
   const qs = params.toString();
-  const res = await fetch(`${API_BASE}/analytics/trends${qs ? `?${qs}` : ""}`, {
+  const res = await authFetch(`${API_BASE}/analytics/trends${qs ? `?${qs}` : ""}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Trends");
@@ -280,7 +312,7 @@ export async function getStoreDetail(
   if (from) params.set("from", from);
   if (to) params.set("to", to);
   const qs = params.toString();
-  const res = await fetch(`${API_BASE}/analytics/stores/${storeId}${qs ? `?${qs}` : ""}`, {
+  const res = await authFetch(`${API_BASE}/analytics/stores/${storeId}${qs ? `?${qs}` : ""}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Store-Details");

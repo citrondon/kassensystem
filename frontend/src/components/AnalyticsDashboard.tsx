@@ -14,6 +14,7 @@ import {
   listLicenseKeys,
   createLicenseKey,
   updateLicenseKey,
+  factoryReset,
 } from "../services/api";
 import { useI18n } from "../i18n/I18nContext";
 import {
@@ -33,6 +34,8 @@ import {
   Copy,
   Check,
   Eye,
+  Link2,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: (storeId: number, storeName: string) => void }) {
@@ -52,6 +55,7 @@ export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: 
   const [newKeyDays, setNewKeyDays] = useState(365);
   const [newKeyResult, setNewKeyResult] = useState("");
   const [copiedKey, setCopiedKey] = useState("");
+  const [factoryResetMsg, setFactoryResetMsg] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -123,6 +127,29 @@ export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: 
     navigator.clipboard.writeText(key);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(""), 2000);
+  }
+
+  // Aktivierungs-Link: Kunde öffnet Link, Lizenz-Screen ist vorbefüllt (?key=)
+  function copyActivationLink(key: string) {
+    const link = `${window.location.origin}/?key=${encodeURIComponent(key)}`;
+    navigator.clipboard.writeText(link);
+    setCopiedKey(`link:${key}`);
+    setTimeout(() => setCopiedKey(""), 2000);
+  }
+
+  async function handleFactoryReset() {
+    if (!window.confirm(t("factoryResetConfirm"))) return;
+    setFactoryResetMsg("");
+    try {
+      const res = await factoryReset(false);
+      if (res.success) {
+        setFactoryResetMsg(t("factoryResetDone").replace("{count}", String(res.deletedCount ?? 0)));
+      } else {
+        setFactoryResetMsg(res.error || t("factoryResetFailed"));
+      }
+    } catch {
+      setFactoryResetMsg(t("factoryResetFailed"));
+    }
   }
 
   return (
@@ -329,6 +356,9 @@ export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: 
                     <td className="py-3 pr-4 text-slate-500 dark:text-slate-400">{new Date(k.expires_at).toLocaleDateString(locale)}</td>
                     <td className="py-3 pr-4">
                       <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => copyActivationLink(k.license_key)} title={t("copyActivationLink")} className="rounded p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700">
+                          {copiedKey === `link:${k.license_key}` ? <Check className="h-4 w-4 text-emerald-500" /> : <Link2 className="h-4 w-4" />}
+                        </button>
                         {k.status !== "cancelled" && (
                           <>
                             <button onClick={() => handleKeyAction(k.license_key, "extend", 30)} title={t("extend30")} className="rounded p-1.5 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30">
@@ -352,6 +382,22 @@ export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: 
             </table>
           </div>
         )}
+
+        {/* ── Factory Reset (developer-only, Demo/Test) ── */}
+        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
+              <AlertTriangle className="h-4 w-4" />
+              {t("factoryReset")}
+            </div>
+            <button onClick={handleFactoryReset} className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
+              {t("factoryReset")}
+            </button>
+          </div>
+          {factoryResetMsg && (
+            <p className="mt-2 text-sm text-red-700 dark:text-red-300">{factoryResetMsg}</p>
+          )}
+        </div>
       </div>
     </div>
   );

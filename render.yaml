@@ -17,6 +17,9 @@ services:
         value: "5000"
       - key: JWT_SECRET
         generateValue: true
+      # Token-Laufzeit (Default "8h" im Code, hier explizit dokumentiert)
+      - key: JWT_EXPIRES_IN
+        value: "8h"
       - key: CORS_ORIGIN
         value: "true"
       - key: DATABASE_URL
