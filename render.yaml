@@ -4,9 +4,10 @@ services:
     runtime: node
     plan: free
     buildCommand: |
-      rm -rf frontend/dist backend/dist
-      cd backend && npm install && npm run build
-      cd ../frontend && npm install && npm run build
+      rm -rf frontend/dist backend/dist backend/dist-static
+      cd backend && npm install --include=dev && npm run build
+      cd ../frontend && npm install --include=dev && npm run build
+      cp -r ../frontend/dist ../backend/dist-static
     # DO NOT run seedUsers here — users are created via setup flow or settings panel
     startCommand: cd backend && node scripts/migrate.cjs up && node dist/server.js
     envVars:
