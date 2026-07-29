@@ -1,12 +1,11 @@
 /**
- * Fix developer account password hash and ensure setup flow still works.
+ * Fix developer account password hash (CommonJS).
  * - Deletes any existing developer user
  * - Re-creates developer with a fresh bcrypt hash
- * - Setup flow still shows when no manager exists (developer doesn't count)
  */
 const bcrypt = require("bcrypt");
 
-export const up = async (pgm) => {
+exports.up = async (pgm) => {
   pgm.sql(`DELETE FROM users WHERE username = 'developer'`);
   const devHash = await bcrypt.hash("dev12345", 10);
   pgm.sql(`
@@ -15,6 +14,6 @@ export const up = async (pgm) => {
   `);
 };
 
-export const down = (pgm) => {
+exports.down = (pgm) => {
   pgm.sql(`DELETE FROM users WHERE username = 'developer'`);
 };

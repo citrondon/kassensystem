@@ -6,7 +6,7 @@
  */
 const bcrypt = require("bcrypt");
 
-export const up = async (pgm) => {
+exports.up = async (pgm) => {
   // Wipe all users
   pgm.sql(`DELETE FROM users`);
 
@@ -28,7 +28,7 @@ export const up = async (pgm) => {
   `);
 };
 
-export const down = (pgm) => {
+exports.down = (pgm) => {
   pgm.sql(`DELETE FROM users WHERE username = 'developer'`);
   pgm.sql(`DELETE FROM subscriptions WHERE license_key = 'MC-PRO-2026-DEMO-KEY'`);
 };
