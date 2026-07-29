@@ -89,9 +89,14 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
 
 export const getSetupStatus = async (_req: Request, res: Response): Promise<void> => {
   try {
-    const result = await pool.query("SELECT COUNT(*) AS count FROM users");
-    const userCount = Number(result.rows[0].count);
-    res.json({ success: true, needsSetup: userCount === 0, userCount });
+    // needsSetup = true when no manager exists (developer account doesn't count)
+    const result = await pool.query("SELECT COUNT(*) AS count FROM users WHERE role IN ('manager', 'developer')");
+    const managerCount = Number(result.rows[0].count);
+    const devResult = await pool.query("SELECT COUNT(*) AS count FROM users WHERE role = 'developer'");
+    const hasDeveloper = Number(devResult.rows[0].count) > 0;
+    // If only developer exists → still needs setup for store owner
+    const needsSetup = hasDeveloper ? managerCount === 1 : managerCount === 0;
+    res.json({ success: true, needsSetup, userCount: managerCount });
   } catch (error) {
     console.error("Setup status error:", error);
     res.status(500).json({ success: false, error: "Status abrufen fehlgeschlagen." });
@@ -112,7 +117,8 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
   }
 
   try {
-    const countResult = await pool.query("SELECT COUNT(*) AS count FROM users");
+    // Allow setup if no manager exists (developer account doesn't block setup)
+    const countResult = await pool.query("SELECT COUNT(*) AS count FROM users WHERE role = 'manager'");
     if (Number(countResult.rows[0].count) > 0) {
       res.status(403).json({ success: false, error: "Setup bereits abgeschlossen." });
       return;
