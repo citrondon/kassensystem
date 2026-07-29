@@ -1,0 +1,4 @@
+# Render build cache invalidation marker
+# Last updated: 2026-07-29
+# Change this timestamp to force a clean build
+BUILD_MARKER=20260729-001
