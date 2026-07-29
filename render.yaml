@@ -6,6 +6,7 @@ services:
     buildCommand: |
       cd backend && npm install && npm run build
       cd ../frontend && npm install && npm run build
+    # DO NOT run seedUsers here — users are created via setup flow or settings panel
     startCommand: cd backend && node scripts/migrate.cjs up && node dist/server.js
     envVars:
       - key: NODE_ENV
@@ -17,4 +18,4 @@ services:
       - key: CORS_ORIGIN
         value: "true"
       - key: DATABASE_URL
-        value: postgresql://kassensystem_db_user:CvVBpmBoz9fk7DZzxNAL6Sp1RVmWdM0I@dpg-d9h4fukm0tmc73bqdl5g-a.frankfurt-postgres.render.com:5432/kassensystem_db
+        value: postgresql://kassensystem_db_user:***@dpg-d9h4fukm0tmc73bqdl5g-a.frankfurt-postgres.render.com:5432/kassensystem_db
