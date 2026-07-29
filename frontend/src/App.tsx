@@ -9,16 +9,18 @@ import CashierInterface from "./components/CashierInterface";
 import InventoryOverview from "./components/InventoryOverview";
 import OrdersView from "./components/OrdersView";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import StoreDetailView from "./components/StoreDetailView";
 import LoginView from "./components/LoginView";
 import LicenseActivation from "./components/LicenseActivation";
 import SetupView from "./components/SetupView";
 import Header from "./components/Header";
 import SettingsPanel from "./components/SettingsPanel";
 
-type View = "dashboard" | "cashier" | "inventory" | "orders" | "analytics";
+type View = "dashboard" | "cashier" | "inventory" | "orders" | "analytics" | "store-detail";
 
 function AppContent() {
   const [view, setView] = useState<View>("dashboard");
+  const [selectedStore, setSelectedStore] = useState<{ id: number; name: string } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
   const { user, loading } = useAuth();
@@ -69,17 +71,18 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <Header onOpenSettings={() => setShowSettings(true)} />
-      <Sidebar active={view} onChange={setView} />
+      <Sidebar active={view === "store-detail" ? "analytics" : view} onChange={setView} />
       <div className="p-3 pb-20 pt-16 lg:ml-64 lg:p-6 lg:pb-6 lg:pt-16">
         <main className="mx-auto w-full max-w-[1440px]">
           {view === "dashboard" && <Dashboard onNavigate={setView} />}
           {view === "cashier" && <CashierInterface />}
           {view === "inventory" && <InventoryOverview />}
           {view === "orders" && <OrdersView />}
-          {view === "analytics" && <AnalyticsDashboard />}
+          {view === "analytics" && <AnalyticsDashboard onSelectStore={(id, name) => { setSelectedStore({ id, name }); setView("store-detail"); }} />}
+          {view === "store-detail" && selectedStore && <StoreDetailView storeId={selectedStore.id} storeName={selectedStore.name} onBack={() => setView("analytics")} />}
         </main>
       </div>
-      <MobileNav active={view} onChange={setView} />
+      <MobileNav active={view === "store-detail" ? "analytics" : view} onChange={setView} />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
