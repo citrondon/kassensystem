@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { CartItem } from "../types";
 import { useI18n } from "../i18n/I18nContext";
 import ProductImage from "./ProductImage";
-import { Minus, Plus, Trash2, ShoppingCart, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Props {
   cart: CartItem[];
@@ -21,6 +22,7 @@ export default function Cart({
   isCheckingOut,
 }: Props) {
   const { t } = useI18n();
+  const [isExpanded, setIsExpanded] = useState(false);
   const currency = t("currency");
   const fmt = (n: number) => Math.round(n).toLocaleString("de-DE");
   const total = cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
@@ -116,11 +118,33 @@ export default function Cart({
       </div>
 
       {/* Mobile: sticky bottom bar with expandable cart */}
-      <div className="xl:hidden fixed bottom-16 left-0 right-0 z-30 mx-auto max-w-md px-2">
+      <div className="xl:hidden fixed bottom-16 left-0 right-0 z-30 px-2">
         {cart.length > 0 && (
           <div className="rounded-xl border border-slate-200 bg-white shadow-lg">
-            {/* Collapsible items */}
-            <ul className="max-h-36 divide-y divide-slate-50 overflow-y-auto scrollbar-thin">
+            <button
+              onClick={() => setIsExpanded((v) => !v)}
+              className="flex w-full items-center justify-between px-3 py-2"
+            >
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-slate-500" />
+                <span className="text-sm font-medium text-slate-700">
+                  {itemCount} {t("piece")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-extrabold text-slate-900">
+                  {fmt(total)} {currency}
+                </span>
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                )}
+              </div>
+            </button>
+
+            {isExpanded && (
+              <ul className="max-h-36 divide-y divide-slate-50 overflow-y-auto scrollbar-thin border-t border-slate-100">
               {cart.map((item) => (
                 <li key={item.id} className="flex items-center gap-2 py-2 px-3">
                   <div className="flex-1 min-w-0">
@@ -154,18 +178,25 @@ export default function Cart({
                 </li>
               ))}
             </ul>
-            {/* Total + checkout */}
-            <div className="flex items-center gap-3 border-t border-slate-100 px-3 py-2.5">
-              <div className="flex-1">
-                <span className="text-xs text-slate-500">{itemCount} {t("piece")}</span>
-                <p className="text-lg font-extrabold text-slate-900">{fmt(total)} {currency}</p>
-              </div>
+            )}
+
+            <div className="border-t border-slate-100 px-3 py-2.5">
               <button
                 onClick={onCheckout}
                 disabled={isCheckingOut}
-                className="btn-success px-5"
+                className="btn-success flex w-full items-center justify-center gap-2"
               >
-                {isCheckingOut ? t("processing") : t("checkout")}
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    {t("processing")}
+                  </>
+                ) : (
+                  <>
+                    {t("checkout")}
+                    <span className="font-normal opacity-90">({fmt(total)} {currency})</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
