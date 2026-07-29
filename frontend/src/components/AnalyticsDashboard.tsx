@@ -328,8 +328,12 @@ export default function AnalyticsDashboard() {
                   </thead>
                   <tbody>
                     {stores.map((s) => (
-                      <tr key={s.id} className="border-b border-slate-50 dark:border-slate-700">
-                        <td className="py-3 pr-4 font-medium text-slate-800 dark:text-slate-200">{s.name}</td>
+                      <tr key={s.id} className="border-b border-slate-50 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/50">
+                        <td className="py-3 pr-4">
+                          <button onClick={() => openStoreDetail(s.id)} className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                            {s.name}
+                          </button>
+                        </td>
                         <td className="py-3 pr-4 text-slate-500 dark:text-slate-400">{s.location || "—"}</td>
                         <td className="py-3 pr-4 text-right text-slate-700 dark:text-slate-300">{Number(s.orders)}</td>
                         <td className="py-3 pr-4 text-right font-bold text-slate-800 dark:text-slate-200">{fmt(Number(s.revenue))} {currency}</td>
