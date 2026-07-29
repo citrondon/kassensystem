@@ -29,7 +29,6 @@ function getMachineId(): string {
     Intl.DateTimeFormat().resolvedOptions().timeZone,
   ].join("|");
 
-  // Simple hash → hex
   let hash = 0;
   for (let i = 0; i < parts.length; i++) {
     hash = (hash << 5) - hash + parts.charCodeAt(i);
@@ -49,13 +48,11 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     const storedInfo = localStorage.getItem(INFO_KEY);
     const licenseKey = localStorage.getItem(LICENSE_KEY_STORAGE);
 
-    // No license at all → show activation screen
     if (!token || !licenseKey) {
       setState("none");
       return;
     }
 
-    // Parse stored info
     if (storedInfo) {
       try {
         setInfo(JSON.parse(storedInfo));
@@ -64,7 +61,6 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Try to verify with server (needs internet)
     const machineId = getMachineId();
     try {
       const res = await verifyLicense(licenseKey, machineId);
@@ -74,17 +70,13 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         setInfo(res.license);
         setState("active");
       } else {
-        // Server says expired
         if (res.expired) {
           setState("expired");
         } else {
-          // Verification failed but not because of expiry
-          // → check if cached token is still valid locally
           checkGracePeriod(storedInfo);
         }
       }
     } catch {
-      // Network error → check grace period from cached info
       checkGracePeriod(storedInfo);
     }
   }
@@ -100,7 +92,6 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       const expiresAt = new Date(parsed.expiresAt);
 
       if (expiresAt > now) {
-        // Subscription still valid, just offline
         setInfo(parsed);
         setState("offline-grace");
       } else {
@@ -146,4 +137,8 @@ export function useLicense(): LicenseContextValue {
   const ctx = useContext(LicenseContext);
   if (!ctx) throw new Error("useLicense must be used within LicenseProvider");
   return ctx;
+}
+
+export function getStoredLicenseToken(): string | null {
+  return localStorage.getItem(STORAGE_KEY);
 }

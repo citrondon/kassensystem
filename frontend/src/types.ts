@@ -97,6 +97,20 @@ export interface LicenseInfo {
   storeId: number;
 }
 
+export interface LicenseKeyRow {
+  id: number;
+  license_key: string;
+  plan: LicensePlan;
+  status: LicenseStatus;
+  expires_at: string;
+  started_at: string;
+  created_at: string;
+  store_id: number | null;
+  store_name: string | null;
+  store_location: string | null;
+  machine_id: string | null;
+}
+
 // ── Analytics types ──
 
 export interface AnalyticsSummary {
@@ -127,4 +141,3 @@ export interface TrendPoint {
   orders: number;
   revenue: number;
 }
-

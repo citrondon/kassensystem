@@ -4,6 +4,7 @@ import { requireDeveloper } from "../middleware/developerMiddleware.js";
 import { requireLicense } from "../middleware/licenseMiddleware.js";
 import {
   syncAnalytics,
+  localSync,
   getAnalyticsSummary,
   getBestsellers,
   getTrends,
@@ -14,6 +15,7 @@ const router = Router();
 
 // Store → Central: sync data (requires license token)
 router.post("/sync", requireLicense, syncAnalytics);
+router.post("/local-sync", requireLicense, localSync);
 
 // Developer → Central: view aggregated data (requires developer auth)
 router.get("/summary", authenticate, requireDeveloper, getAnalyticsSummary);
