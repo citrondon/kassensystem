@@ -191,3 +191,47 @@ npm run test
 - **Datenbank nicht erreichbar:** Container noch nicht gesund. `docker compose up -d` wiederholen und `docker ps` prüfen.
 - **Port 5432 belegt:** Vorhandene PostgreSQL-Instanz stoppen oder `DB_PORT` in `backend/.env` ändern.
 - **Tests schlagen fehl:** `backend/.env.test` fehlt. Vorlage: `backend/.env.test.example`.
+
+---
+
+## Produktiv-Deployment (Docker/VPS) + Kunden-Provisionierung
+
+**Modell:** Mon Comptoir = Multi-Kunden-Produkt, **eine Instanz pro Kunde** (kein Multi-Tenancy). Hosting-Ziel: eigener VPS mit einem Docker-Compose-Stack pro Kunde. **Render ist Interim** (Zentralserver für Lizenz/Analytics + Pilot-Instanz).
+
+### Dateien
+
+| Datei | Zweck |
+|-------|-------|
+| `Dockerfile` | Multi-Stage-Build (Frontend → Backend → Runtime `node:20-alpine`). Start: `node scripts/migrate.cjs up && node dist/server.js` (wie Render). |
+| `docker-compose.prod.yml` | Produktiv-Stack: `app` (Dockerfile-Build) + `db` (`postgres:16-alpine`, Volume, Healthcheck). Projektname `kassensystem-${CUSTOMER}`, Port `${APP_PORT}` → mehrere Kunden-Stacks nebeneinander. |
+| `.env.production.example` | Template für Stack-Variablen (`CUSTOMER`, `APP_PORT`, `POSTGRES_*`, `JWT_SECRET`, `JWT_EXPIRES_IN`). |
+| `scripts/provision-customer.sh` | Kunden-Onboarding: Lizenz-Key auf Zentralserver erzeugen → Stack starten → Key in Kunden-DB spiegeln → Aktivierungs-Link ausgeben. Idempotent (Stand in `provisioned/<kunde>/.env`). |
+| `provision.env.example` | Template für Zentralserver-Zugang des Provisionierungs-Skripts. |
+
+### Manueller Stack-Start (ohne Provisionierungs-Skript)
+
+```bash
+cp .env.production.example .env.production   # Werte anpassen!
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+curl http://localhost:${APP_PORT:-5000}/health   # {"status":"ok"}
+```
+
+### Kunden provisionieren (VPS)
+
+```bash
+cp provision.env.example provision.env        # CENTRAL_URL, DEV_USERNAME, DEV_PASSWORD, PUBLIC_HOST
+bash scripts/provision-customer.sh <kunde> [plan=trial|basic|pro] [laufzeit-tage=365] [app-port]
+# Ausgabe: Aktivierungs-Link http(s)://<host>:<port>/?key=<KEY>
+```
+
+Der Kunde öffnet den Link → Lizenz-Felder vorbefüllt → aktivieren → Manager-Konto erstellen (Wizard-Schritte 1/2, 2/2).
+
+### Wichtige Hinweise
+
+1. **Key-Spiegelung:** Die Kunden-Instanz aktiviert/verifiziert Lizenzen gegen ihre **eigene** `subscriptions`-Tabelle. Das Skript spiegelt den zentral erzeugten Key deshalb in die Kunden-DB. Der Zentralserver bleibt Master; **cancel/extend auf der Zentrale propagiert aktuell nicht** auf Kunden-Instanzen.
+2. **DB_SSL=false** ist im Prod-Compose gesetzt (Compose-interne Postgres kann kein SSL). Externe DBs mit SSL (Render): `DATABASE_URL` ohne `DB_SSL=false` → SSL bleibt an.
+3. **`JWT_EXPIRES_IN`** steuert die Token-Laufzeit (Default `8h`).
+4. **Factory-Reset** (`POST /api/auth/factory-reset`, developer-only) öffnet den Setup-Flow neu — kein Migration+Redeploy mehr nötig. Auch als Button im Dev-Panel (Analytics).
+5. **`/api/debug/status`** ist developer-only (JWT), nicht mehr öffentlich.
+6. **Geheimnisse:** `.env.production`, `provision.env`, `provisioned/` sind gitignored.
+7. **Render Free Postgres läuft zeitlich ab** — kein produktiver Kunde auf Render Free DB; der Docker-Stack ist der Exit-Pfad.

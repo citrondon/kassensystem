@@ -3,6 +3,9 @@ dist/
 backend/dist-static/
 .env
 .env.test
+.env.production
+provision.env
+provisioned/
 *.local
 .DS_Store
 uploads/

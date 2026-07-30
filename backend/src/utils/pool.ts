@@ -3,11 +3,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Render provides DATABASE_URL; local dev uses individual DB_* vars
+// Render provides DATABASE_URL; local dev uses individual DB_* vars.
+// SSL ist bei DATABASE_URL standardmäßig an (Render), per DB_SSL=false abschaltbar
+// (z.B. Compose-interne Postgres ohne SSL im Docker-Produktiv-Stack).
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      ssl: process.env.DB_SSL === "false" ? false : { rejectUnauthorized: false },
     })
   : new Pool({
       user: process.env.DB_USER,
