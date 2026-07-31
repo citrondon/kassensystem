@@ -21,7 +21,7 @@ android {
             storeFile file('mon-comptoir-release.keystore')
             storePassword System.getenv('KEYSTORE_PASSWORD') ?: 'poskeystore123'
             keyAlias 'moncomptoir'
-            keyPassword System.getenv('KEY_PASSWORD') ?: 'poskey123'
+            keyPassword System.getenv('KEY_PASSWORD') ?: 'poskeystore123'
         }
     }
     buildTypes {

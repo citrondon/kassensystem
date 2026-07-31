@@ -19,28 +19,76 @@ interface BundleInfo {
   minNativeVersion?: string;
 }
 
-function readVersionManifest(): { current: string; bundles: BundleInfo[] } {
+interface HistoryEntry {
+  version: string;
+  deployedAt: string;
+}
+
+interface Manifest {
+  current: string;
+  bundles: BundleInfo[];
+  history: HistoryEntry[];
+  storeOverrides: Record<string, string>;
+}
+
+function readVersionManifest(): Manifest {
   const manifestPath = path.join(BUNDLES_DIR, "manifest.json");
+  const empty: Manifest = { current: "builtin", bundles: [], history: [], storeOverrides: {} };
   if (!fs.existsSync(manifestPath)) {
-    return { current: "builtin", bundles: [] };
+    return empty;
   }
   try {
-    return JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    return {
+      current: raw.current || "builtin",
+      bundles: raw.bundles || [],
+      history: raw.history || [],
+      storeOverrides: raw.storeOverrides || {},
+    };
   } catch {
-    return { current: "builtin", bundles: [] };
+    return empty;
   }
 }
 
-// GET /api/app-version — app checks this on startup
-router.get("/", (_req, res) => {
-  const manifest = readVersionManifest();
-  const current = manifest.bundles.find(
-    (b) => b.version === manifest.current
+function writeManifest(manifest: Manifest): void {
+  fs.writeFileSync(
+    path.join(BUNDLES_DIR, "manifest.json"),
+    JSON.stringify(manifest, null, 2)
   );
+}
+
+function checkOtaKey(req: import("express").Request, res: import("express").Response): boolean {
+  const otaKey = process.env.OTA_UPLOAD_KEY;
+  if (!otaKey) {
+    res.status(503).json({ success: false, error: "OTA_UPLOAD_KEY not configured" });
+    return false;
+  }
+  const providedKey = req.headers["x-ota-key"];
+  if (providedKey !== otaKey) {
+    res.status(403).json({ success: false, error: "Invalid OTA key" });
+    return false;
+  }
+  return true;
+}
+
+// GET /api/app-version — app checks this on startup
+// Optional: ?storeId=N for per-store version override
+router.get("/", (req, res) => {
+  const manifest = readVersionManifest();
+  const storeId = req.query.storeId as string | undefined;
+
+  // Resolve version: store override > current
+  let version = manifest.current;
+  if (storeId && manifest.storeOverrides[storeId]) {
+    version = manifest.storeOverrides[storeId];
+  }
+
+  const bundle = manifest.bundles.find((b) => b.version === version) || null;
+
   res.json({
     success: true,
-    version: manifest.current,
-    bundle: current || null,
+    version,
+    bundle,
     bundlesPath: "/api/app-version/download",
   });
 });
@@ -69,16 +117,7 @@ router.get("/download/:version", (req, res) => {
 // POST /api/app-version/upload — deploy script pushes new bundle here
 // Auth: shared secret header (X-OTA-Key)
 router.post("/upload", (req, res) => {
-  const otaKey = process.env.OTA_UPLOAD_KEY;
-  if (!otaKey) {
-    res.status(503).json({ success: false, error: "OTA_UPLOAD_KEY not configured" });
-    return;
-  }
-  const providedKey = req.headers["x-ota-key"];
-  if (providedKey !== otaKey) {
-    res.status(403).json({ success: false, error: "Invalid OTA key" });
-    return;
-  }
+  if (!checkOtaKey(req, res)) return;
 
   const { version, checksum } = req.body as { version?: string; checksum?: string };
   if (!version || !/^[\w.-]+$/.test(version)) {
@@ -86,8 +125,7 @@ router.post("/upload", (req, res) => {
     return;
   }
 
-  // Expect multipart form with zip file
-  // For simplicity, also accept raw body with Content-Type: application/zip
+  // Expect raw zip body
   const chunks: Buffer[] = [];
   req.on("data", (chunk: Buffer) => chunks.push(chunk));
   req.on("end", () => {
@@ -128,10 +166,14 @@ router.post("/upload", (req, res) => {
       manifest.bundles.push(bundleInfo);
     }
     manifest.current = version;
-    fs.writeFileSync(
-      path.join(BUNDLES_DIR, "manifest.json"),
-      JSON.stringify(manifest, null, 2)
-    );
+
+    // Record in history (keep last 10)
+    manifest.history.push({ version, deployedAt: new Date().toISOString() });
+    if (manifest.history.length > 10) {
+      manifest.history = manifest.history.slice(-10);
+    }
+
+    writeManifest(manifest);
 
     res.json({
       success: true,
@@ -140,6 +182,74 @@ router.post("/upload", (req, res) => {
       checksum: actualChecksum,
     });
   });
+});
+
+// POST /api/app-version/rollback — revert to previous version
+// Auth: X-OTA-Key
+router.post("/rollback", (req, res) => {
+  if (!checkOtaKey(req, res)) return;
+
+  const manifest = readVersionManifest();
+  if (manifest.history.length < 2) {
+    res.status(400).json({ success: false, error: "No previous version to roll back to" });
+    return;
+  }
+
+  // Find current in history, go one back
+  const currentIdx = manifest.history.findIndex((h) => h.version === manifest.current);
+  if (currentIdx < 1) {
+    res.status(400).json({ success: false, error: "Cannot determine previous version" });
+    return;
+  }
+
+  const previous = manifest.history[currentIdx - 1];
+  const fromVersion = manifest.history[currentIdx].version;
+  manifest.current = previous.version;
+
+  writeManifest(manifest);
+
+  res.json({
+    success: true,
+    rolledBackTo: previous.version,
+    from: fromVersion,
+  });
+});
+
+// POST /api/app-version/set-store — pin a store to a version (staged rollout)
+// Body: { storeId: string, version: string }
+// Auth: X-OTA-Key
+router.post("/set-store", (req, res) => {
+  if (!checkOtaKey(req, res)) return;
+
+  const { storeId, version } = req.body as { storeId?: string; version?: string };
+  if (!storeId || !version) {
+    res.status(400).json({ success: false, error: "storeId and version required" });
+    return;
+  }
+
+  const manifest = readVersionManifest();
+  if (!manifest.bundles.find((b) => b.version === version)) {
+    res.status(404).json({ success: false, error: `Version ${version} not found` });
+    return;
+  }
+
+  manifest.storeOverrides[storeId] = version;
+  writeManifest(manifest);
+
+  res.json({ success: true, storeId, version });
+});
+
+// DELETE /api/app-version/set-store/:storeId — remove store override, back to default
+// Auth: X-OTA-Key
+router.delete("/set-store/:storeId", (req, res) => {
+  if (!checkOtaKey(req, res)) return;
+
+  const { storeId } = req.params;
+  const manifest = readVersionManifest();
+  delete manifest.storeOverrides[storeId];
+  writeManifest(manifest);
+
+  res.json({ success: true, storeId, version: manifest.current });
 });
 
 export default router;
