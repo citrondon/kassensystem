@@ -60,6 +60,7 @@ export default function LicenseActivation() {
   // CGU: erst nach Scroll-Ans Ende + Akzeptieren wird Aktiviert
   const [scrolledEnd, setScrolledEnd] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const termsRef = useRef<HTMLDivElement>(null);
   const locale = lang === "fr" ? "fr-FR" : "de-DE";
 
@@ -146,94 +147,129 @@ export default function LicenseActivation() {
           <WizardSteps current={1} />
         </div>
 
-        {/* CGU — muss durchgelesen + akzeptiert werden, mobile-first */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            <FileText className="h-3.5 w-3.5" />
-            {t("termsTitle")}
-          </div>
-          <div
-            ref={termsRef}
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-              if (atEnd && !scrolledEnd) setScrolledEnd(true);
+        {/* CGU — zweistufig: erst Key+Laden, dann AGB */}
+
+        {/* Stufe 1: Lizenz-Key + Laden-Name */}
+        {!showTerms && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setShowTerms(true);
             }}
-            className="max-h-[38vh] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 sm:max-h-80 dark:border-slate-700 dark:bg-slate-900/50"
+            className="space-y-4"
           >
-            <TermsDocument />
-          </div>
-          <p
-            className={`flex items-center gap-1.5 text-xs transition-colors ${
-              scrolledEnd
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-slate-400 dark:text-slate-500"
-            }`}
-          >
-            {scrolledEnd ? (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                {t("termsScrolledAll")}
-              </>
-            ) : (
-              t("termsScrollHint")
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("licenseKey")}</label>
+              <input
+                type="text"
+                value={licenseKey}
+                onChange={(e) => setLicenseKey(e.target.value)}
+                placeholder="XXXX-XXXX-XXXX-XXXX"
+                required
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("storeName")}</label>
+              <input
+                type="text"
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder={t("storeName")}
+                required
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              />
+            </div>
+            <button type="submit" className="btn-primary flex w-full items-center justify-center gap-2">
+              <FileText className="h-5 w-5" />
+              {t("termsContinue")}
+            </button>
+          </form>
+        )}
+
+        {/* Stufe 2: AGB durchlesen + akzeptieren + aktivieren */}
+        {showTerms && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <FileText className="h-3.5 w-3.5" />
+                {t("termsTitle")}
+              </div>
+              <div
+                ref={termsRef}
+                onScroll={(e) => {
+                  const el = e.currentTarget;
+                  const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+                  if (atEnd && !scrolledEnd) setScrolledEnd(true);
+                }}
+                className="max-h-[45vh] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 sm:max-h-96 dark:border-slate-700 dark:bg-slate-900/50"
+              >
+                <TermsDocument />
+              </div>
+              <p
+                className={`flex items-center gap-1.5 text-xs transition-colors ${
+                  scrolledEnd
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-slate-400 dark:text-slate-500"
+                }`}
+              >
+                {scrolledEnd ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    {t("termsScrolledAll")}
+                  </>
+                ) : (
+                  t("termsScrollHint")
+                )}
+              </p>
+              <label
+                className={`flex items-start gap-2.5 rounded-xl border p-3 text-sm transition-colors ${
+                  accepted
+                    ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20"
+                    : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40"
+                } ${!scrolledEnd ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  disabled={!scrolledEnd}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700"
+                />
+                <span className="text-slate-700 dark:text-slate-300">{t("termsAccept")}</span>
+              </label>
+            </div>
+
+            {error && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-300">{error}</p>
             )}
-          </p>
-          <label
-            className={`flex items-start gap-2.5 rounded-xl border p-3 text-sm transition-colors ${
-              accepted
-                ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20"
-                : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40"
-            } ${!scrolledEnd ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
-          >
-            <input
-              type="checkbox"
-              checked={accepted}
-              disabled={!scrolledEnd}
-              onChange={(e) => setAccepted(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700"
-            />
-            <span className="text-slate-700 dark:text-slate-300">{t("termsAccept")}</span>
-          </label>
-        </div>
 
-        <form onSubmit={handleActivate} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("licenseKey")}</label>
-            <input
-              type="text"
-              value={licenseKey}
-              onChange={(e) => setLicenseKey(e.target.value)}
-              placeholder="XXXX-XXXX-XXXX-XXXX"
-              required
-              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTerms(false);
+                  setAccepted(false);
+                  setScrolledEnd(false);
+                  setError("");
+                }}
+                className="btn-secondary flex items-center justify-center gap-1.5 px-4"
+              >
+                <RotateCcw className="h-4 w-4" />
+                {t("termsBack")}
+              </button>
+              <button
+                type="button"
+                onClick={handleActivate}
+                disabled={loading || !accepted || !scrolledEnd}
+                className="btn-primary flex flex-1 items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : accepted ? <ShieldCheck className="h-5 w-5" /> : <KeyRound className="h-5 w-5" />}
+                {t("licenseActivate")}
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("storeName")}</label>
-            <input
-              type="text"
-              value={storeName}
-              onChange={(e) => setStoreName(e.target.value)}
-              placeholder={t("storeName")}
-              required
-              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-300">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || !accepted || !scrolledEnd}
-            className="btn-primary flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : accepted ? <ShieldCheck className="h-5 w-5" /> : <KeyRound className="h-5 w-5" />}
-            {t("licenseActivate")}
-          </button>
-        </form>
+        )}
 
         {info && (
           <button onClick={reset} className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
