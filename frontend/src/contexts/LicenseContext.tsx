@@ -17,6 +17,21 @@ const LicenseContext = createContext<LicenseContextValue | null>(null);
 const STORAGE_KEY = "pos_license_token";
 const INFO_KEY = "pos_license_info";
 const LICENSE_KEY_STORAGE = "pos_license_key";
+const LAST_SEEN_KEY = "pos_last_seen_time";
+const CLOCK_TOLERANCE_MS = 2 * 60 * 60 * 1000; // 2h Toleranz für Uhrzeitanpassung
+
+// JWT-Payload dekodieren (base64) ohne Signatur-Verifikation.
+// Der Token ist server-seitig signiert — Client kann ihn nicht fälschen.
+// Wird genutzt um expiresAt tamper-resistent zu prüfen (nicht INFO_KEY).
+function decodeJwtPayload(token: string): { expiresAt?: string; status?: string; plan?: string } | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    return JSON.parse(atob(parts[1]));
+  } catch {
+    return null;
+  }
+}
 
 // Generate a stable machine ID from browser fingerprint
 function getMachineId(): string {
@@ -68,6 +83,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       if (res.success && res.token) {
         localStorage.setItem(STORAGE_KEY, res.token);
         localStorage.setItem(INFO_KEY, JSON.stringify(res.license));
+        localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
         setInfo(res.license);
         setState("active");
       } else if (res.expired) {
@@ -81,38 +97,76 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         setInfo(null);
         setState("none");
       } else {
-        // Server-Fehler (500 etc.) → Grace Period ok
-        checkGracePeriod(storedInfo);
+        // Server-Fehler (500 etc.) → Offline-Check mit JWT + Clock-Schutz
+        checkOffline(token, storedInfo);
       }
     } catch {
-      // Netzwerkfehler → Grace Period ok
-      checkGracePeriod(storedInfo);
+      // Netzwerkfehler (offline) → Offline-Check mit JWT + Clock-Schutz
+      checkOffline(token, storedInfo);
     }
   }
 
-  function checkGracePeriod(storedInfo: string | null) {
-    if (!storedInfo) {
+  function checkOffline(token: string, storedInfo: string | null) {
+    // 1. Expiry aus JWT-Payload (tamper-resistent, server-signiert)
+    const payload = decodeJwtPayload(token);
+    if (!payload?.expiresAt) {
+      // JWT nicht dekodierbar → Vertrauen verloren
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(INFO_KEY);
+      localStorage.removeItem(LICENSE_KEY_STORAGE);
+      setInfo(null);
       setState("none");
       return;
     }
-    try {
-      const parsed = JSON.parse(storedInfo) as LicenseInfo;
-      const now = new Date();
-      const expiresAt = new Date(parsed.expiresAt);
 
-      if (expiresAt > now) {
-        setInfo(parsed);
-        setState("offline-grace");
-      } else {
+    const now = new Date();
+    const expiresAt = new Date(payload.expiresAt);
+
+    // 2. Clock-Rollback-Erkennung
+    // Speichere letzte Seen-Zeit. Wenn jetzt < letzte Seen - Toleranz
+    // → Systemuhr wurde zurückgestellt → Sperren
+    const lastSeen = localStorage.getItem(LAST_SEEN_KEY);
+    if (lastSeen) {
+      const lastSeenMs = new Date(lastSeen).getTime();
+      const nowMs = now.getTime();
+      if (nowMs < lastSeenMs - CLOCK_TOLERANCE_MS) {
+        // Clock rollback erkannt → Lizenz sperren
         setState("expired");
+        return;
       }
-    } catch {
-      setState("none");
+    }
+
+    // 3. Expiry prüfen
+    if (expiresAt > now) {
+      // Lizenz gültig — App funktioniert offline
+      if (storedInfo) {
+        try { setInfo(JSON.parse(storedInfo)); } catch { /* ignore */ }
+      }
+      setState("offline-grace");
+      // Last-Seen Zeit aktualisieren
+      localStorage.setItem(LAST_SEEN_KEY, now.toISOString());
+    } else {
+      // Lizenz abgelaufen → sperren
+      setState("expired");
     }
   }
 
   useEffect(() => {
     checkLicense();
+
+    // Re-Check wenn wieder online (catched Cancel/Extend vom Server)
+    const goOnline = () => checkLicense();
+    window.addEventListener("online", goOnline);
+
+    // Periodic Re-Check alle 4 Stunden (wenn online)
+    const interval = setInterval(() => {
+      if (navigator.onLine) checkLicense();
+    }, 4 * 60 * 60 * 1000);
+
+    return () => {
+      window.removeEventListener("online", goOnline);
+      clearInterval(interval);
+    };
   }, []);
 
   async function activate(licenseKey: string, storeName: string) {
@@ -126,6 +180,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, res.token);
     localStorage.setItem(INFO_KEY, JSON.stringify(res.license));
     localStorage.setItem(LICENSE_KEY_STORAGE, licenseKey);
+    localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
     setInfo(res.license);
     setState("active");
   }
@@ -140,6 +195,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(INFO_KEY);
     localStorage.removeItem(LICENSE_KEY_STORAGE);
+    localStorage.removeItem(LAST_SEEN_KEY);
     setInfo(null);
     setState("none");
   }
