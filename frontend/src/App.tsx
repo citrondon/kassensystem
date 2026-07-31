@@ -57,11 +57,21 @@ function AppContent() {
     return () => window.removeEventListener("hashchange", handleHash);
   }, []);
 
-  // Check if setup is needed (no users exist)
+  // Check if setup is needed (no manager for this store)
   useEffect(() => {
     if (licenseState === "active" || licenseState === "offline-grace") {
       if (!user && !loading) {
-        fetch(`${API_BASE}/auth/setup-status`)
+        // Get storeId from license info for per-store setup check
+        let storeId: string | null = null;
+        try {
+          const info = localStorage.getItem("pos_license_info");
+          if (info) storeId = String(JSON.parse(info).storeId);
+        } catch {}
+
+        const url = storeId
+          ? `${API_BASE}/auth/setup-status?storeId=${storeId}`
+          : `${API_BASE}/auth/setup-status`;
+        fetch(url)
           .then((r) => r.json())
           .then((data) => {
             if (data.success && data.needsSetup) {

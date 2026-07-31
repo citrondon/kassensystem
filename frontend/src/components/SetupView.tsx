@@ -30,9 +30,19 @@ export default function SetupView() {
 
     setLoading(true);
     try {
+      // Get storeId from license info for per-store setup
+      let storeId: string | null = null;
+      try {
+        const info = localStorage.getItem("pos_license_info");
+        if (info) storeId = String(JSON.parse(info).storeId);
+      } catch {}
+
       const res = await fetch(`${API_BASE}/auth/setup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(storeId ? { "X-Store-Id": storeId } : {}),
+        },
         body: JSON.stringify({ username, password }),
       });
       const data = await res.json();

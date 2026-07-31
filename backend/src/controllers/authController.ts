@@ -92,13 +92,28 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
 
 // ── Setup: first owner account ──
 
-export const getSetupStatus = async (_req: Request, res: Response): Promise<void> => {
+export const getSetupStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    // needsSetup = true when no manager exists (developer account doesn't count)
-    const result = await pool.query("SELECT COUNT(*) AS count FROM users WHERE role = 'manager'");
-    const managerCount = Number(result.rows[0].count);
-    const needsSetup = managerCount === 0;
-    res.json({ success: true, needsSetup, userCount: managerCount });
+    // Per-store setup: check if a manager exists for this store.
+    // storeId comes from license token header (X-Store-Id) or query param.
+    const storeId = req.headers["x-store-id"] as string || req.query.storeId as string;
+
+    if (storeId) {
+      // Per-store check: manager with this store_id
+      const result = await pool.query(
+        "SELECT COUNT(*) AS count FROM users WHERE role = 'manager' AND store_id = $1",
+        [Number(storeId)]
+      );
+      const managerCount = Number(result.rows[0].count);
+      const needsSetup = managerCount === 0;
+      res.json({ success: true, needsSetup, userCount: managerCount });
+    } else {
+      // Fallback: global check (single-store deployments)
+      const result = await pool.query("SELECT COUNT(*) AS count FROM users WHERE role = 'manager'");
+      const managerCount = Number(result.rows[0].count);
+      const needsSetup = managerCount === 0;
+      res.json({ success: true, needsSetup, userCount: managerCount });
+    }
   } catch (error) {
     console.error("Setup status error:", error);
     res.status(500).json({ success: false, error: "Status abrufen fehlgeschlagen." });
@@ -119,17 +134,32 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
   }
 
   try {
-    // Allow setup if no manager exists (developer account doesn't block setup)
-    const countResult = await pool.query("SELECT COUNT(*) AS count FROM users WHERE role = 'manager'");
-    if (Number(countResult.rows[0].count) > 0) {
-      res.status(403).json({ success: false, error: "Setup bereits abgeschlossen." });
-      return;
+    // Allow setup if no manager exists for this store.
+    // storeId from license token header; if absent, use global check.
+    const storeId = req.headers["x-store-id"] as string;
+
+    if (storeId) {
+      const countResult = await pool.query(
+        "SELECT COUNT(*) AS count FROM users WHERE role = 'manager' AND store_id = $1",
+        [Number(storeId)]
+      );
+      if (Number(countResult.rows[0].count) > 0) {
+        res.status(403).json({ success: false, error: "Setup bereits abgeschlossen." });
+        return;
+      }
+    } else {
+      const countResult = await pool.query("SELECT COUNT(*) AS count FROM users WHERE role = 'manager'");
+      if (Number(countResult.rows[0].count) > 0) {
+        res.status(403).json({ success: false, error: "Setup bereits abgeschlossen." });
+        return;
+      }
     }
 
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query<UserRow>(
-      `INSERT INTO users (username, password_hash, role) VALUES ($1, $2, 'manager') RETURNING id, username, role`,
-      [username, hash]
+      `INSERT INTO users (username, password_hash, role, store_id) VALUES ($1, $2, 'manager', $3)
+       RETURNING id, username, role`,
+      [username, hash, storeId ? Number(storeId) : null]
     );
 
     const user = result.rows[0];
