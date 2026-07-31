@@ -36,7 +36,9 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       CORS_ORIGIN: "*"
       OTA_UPLOAD_KEY: ${OTA_UPLOAD_KEY:-}
-    # Kein Host-Port: App ist nur ueber Caddy (app.<domain>) erreichbar
+    # Port 5000 exposed for APK direct HTTP access (until DNS for app.moncomptoir.bj is updated)
+    ports:
+      - "5000:5000"
     volumes:
       - uploads:/app/backend/uploads
       - ota_bundles:/app/backend/ota-bundles
