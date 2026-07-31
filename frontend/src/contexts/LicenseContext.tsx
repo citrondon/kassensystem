@@ -70,14 +70,22 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(INFO_KEY, JSON.stringify(res.license));
         setInfo(res.license);
         setState("active");
+      } else if (res.expired) {
+        setState("expired");
+      } else if (res.statusCode === 404) {
+        // Key existiert nicht auf diesem Server (z.B. lokal aktiviert, jetzt auf VPS)
+        // → Grace Period ist falsch, Wizard muss neu erscheinen
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(INFO_KEY);
+        localStorage.removeItem(LICENSE_KEY_STORAGE);
+        setInfo(null);
+        setState("none");
       } else {
-        if (res.expired) {
-          setState("expired");
-        } else {
-          checkGracePeriod(storedInfo);
-        }
+        // Server-Fehler (500 etc.) → Grace Period ok
+        checkGracePeriod(storedInfo);
       }
     } catch {
+      // Netzwerkfehler → Grace Period ok
       checkGracePeriod(storedInfo);
     }
   }

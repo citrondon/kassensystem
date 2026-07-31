@@ -1,0 +1,23 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "provider": {
+    "tokenrouter": {
+      "options": {
+        "apiKey": "fg-8177373e5ee54aa694f32365707c512f",
+        "baseURL": "https://api.tokenrouter.com/v1"
+      },
+      "models": {
+        "moonshotai/kimi-k3-free": { "name": "Kimi K3 (Free)" }
+      }
+    },
+    "forge": {
+      "options": {
+        "apiKey": "fg-f6599d3f09344bfa8a3fd979d8207306",
+        "baseURL": "https://forge-gateway-api.fly.dev/v1"
+      },
+      "models": {
+        "kimi-k3": { "name": "Kimi K3 (Forge)" }
+      }
+    }
+  }
+}

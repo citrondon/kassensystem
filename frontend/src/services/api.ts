@@ -199,13 +199,14 @@ export async function activateLicense(
 export async function verifyLicense(
   licenseKey: string,
   machineId: string
-): Promise<{ success: boolean; token: string; license: LicenseInfo; error?: string; expired?: boolean }> {
+): Promise<{ success: boolean; token: string; license: LicenseInfo; error?: string; expired?: boolean; statusCode?: number }> {
   const res = await fetch(`${API_BASE}/license/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ licenseKey, machineId }),
   });
-  return res.json();
+  const body = await res.json();
+  return { ...body, statusCode: res.status };
 }
 
 // ── License Management API (developer-only) ──
