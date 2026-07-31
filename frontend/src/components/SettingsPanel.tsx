@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredToken } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
-import { X, UserPlus, Trash2, Loader2 } from "lucide-react";
+import { X, UserPlus, Trash2, Loader2, Tag, Plus } from "lucide-react";
+import { getCategories, createCategory, deleteCategory } from "../services/api";
+import { getCategoryLabel } from "../utils/categoryStyles";
+import type { Category } from "../types";
 
 interface UserRow {
   id: number;
@@ -13,7 +16,7 @@ interface UserRow {
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUsername, setNewUsername] = useState("");
@@ -21,6 +24,12 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [newRole, setNewRole] = useState("cashier");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Kategorien-Verwaltung (Manager-only)
+  const isManager = user?.role === "manager" || user?.role === "developer";
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [catLoading, setCatLoading] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -36,6 +45,49 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   }, []);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
+
+  const loadCategories = useCallback(async () => {
+    setCatLoading(true);
+    try {
+      const cats = await getCategories();
+      setCategories(cats);
+    } catch {
+      // ignore
+    } finally {
+      setCatLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isManager) loadCategories();
+  }, [isManager, loadCategories]);
+
+  async function handleCreateCategory(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newCategoryName.trim();
+    if (!name) return;
+    setError(""); setSuccess("");
+    try {
+      const cat = await createCategory(name);
+      setSuccess(t("categoryCreated").replace("{name}", name));
+      setNewCategoryName("");
+      setCategories((prev) => [...prev, cat].sort((a, b) => a.name.localeCompare(b.name)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("categoryCreateFailed"));
+    }
+  }
+
+  async function handleDeleteCategory(id: number, name: string) {
+    if (!confirm(t("categoryDeleteConfirm").replace("{name}", getCategoryLabel(name, lang)))) return;
+    setError(""); setSuccess("");
+    try {
+      await deleteCategory(id);
+      setSuccess(t("categoryDeleted").replace("{name}", getCategoryLabel(name, lang)));
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("categoryCreateFailed"));
+    }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -67,7 +119,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{t("settings")}</h2>
           <button onClick={onClose} className="btn-icon"><X className="h-5 w-5" /></button>
@@ -97,6 +149,53 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
 
         {error && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">{error}</p>}
         {success && <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">{success}</p>}
+
+        {/* Kategorien-Verwaltung — Manager-only */}
+        {isManager && (
+          <div className="mb-6 rounded-lg bg-slate-50 p-4 dark:bg-slate-900/50">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+              <Tag className="h-4 w-4" />{t("categoriesManage")}
+            </h3>
+            <form onSubmit={handleCreateCategory} className="mb-3 flex gap-2">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder={t("categoryNamePlaceholder")}
+                maxLength={100}
+                className="input flex-1"
+                required
+              />
+              <button type="submit" className="btn-primary flex items-center gap-1.5 whitespace-nowrap">
+                <Plus className="h-4 w-4" />{t("categoryCreate")}
+              </button>
+            </form>
+            {catLoading ? (
+              <div className="flex items-center justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <span
+                    key={cat.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                  >
+                    {getCategoryLabel(cat.name, lang)}
+                    <button
+                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                      className="text-slate-400 transition hover:text-red-600"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                {categories.length === 0 && (
+                  <p className="text-xs text-slate-400">—</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <h3 className="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300">{t("userOverview")}</h3>
         {loading ? (

@@ -69,6 +69,26 @@ export async function getCategories(): Promise<Category[]> {
   return res.json();
 }
 
+export async function createCategory(name: string): Promise<Category> {
+  const res = await authFetch(`${API_BASE}/categories`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ name }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Fehler beim Erstellen der Kategorie");
+  return data.category;
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  const res = await authFetch(`${API_BASE}/categories/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Fehler beim Löschen der Kategorie");
+}
+
 export async function createProduct(data: ProductFormData): Promise<Product> {
   const res = await authFetch(`${API_BASE}/products`, {
     method: "POST",
@@ -186,12 +206,13 @@ export async function getOrderById(id: number): Promise<OrderDetail> {
 export async function activateLicense(
   licenseKey: string,
   storeName: string,
-  machineId: string
+  machineId: string,
+  termsVersion?: string
 ): Promise<{ success: boolean; token: string; license: LicenseInfo; error?: string }> {
   const res = await fetch(`${API_BASE}/license/activate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ licenseKey, storeName, machineId }),
+    body: JSON.stringify({ licenseKey, storeName, machineId, termsVersion }),
   });
   return res.json();
 }

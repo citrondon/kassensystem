@@ -89,6 +89,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     started_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     expires_at    TIMESTAMP WITH TIME ZONE NOT NULL,
     cancelled_at  TIMESTAMP WITH TIME ZONE,
+    terms_accepted_version VARCHAR(20),
+    terms_accepted_at      TIMESTAMP WITH TIME ZONE,
     created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

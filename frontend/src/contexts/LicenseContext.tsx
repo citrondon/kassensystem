@@ -7,7 +7,7 @@ type LicenseState = "checking" | "active" | "expired" | "none" | "offline-grace"
 interface LicenseContextValue {
   state: LicenseState;
   info: LicenseInfo | null;
-  activate: (licenseKey: string, storeName: string) => Promise<void>;
+  activate: (licenseKey: string, storeName: string, termsVersion?: string) => Promise<void>;
   retry: () => void;
   reset: () => void;
 }
@@ -169,9 +169,9 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function activate(licenseKey: string, storeName: string) {
+  async function activate(licenseKey: string, storeName: string, termsVersion?: string) {
     const machineId = getMachineId();
-    const res = await activateLicense(licenseKey, storeName, machineId);
+    const res = await activateLicense(licenseKey, storeName, machineId, termsVersion);
 
     if (!res.success || !res.token) {
       throw new Error(res.error || "Aktivierung fehlgeschlagen");

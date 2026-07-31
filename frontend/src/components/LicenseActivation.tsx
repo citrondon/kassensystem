@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLicense } from "../contexts/LicenseContext";
 import { useI18n } from "../i18n/I18nContext";
-import { KeyRound, Loader2, WifiOff, AlertCircle, Store, Check, RotateCcw } from "lucide-react";
+import { KeyRound, Loader2, WifiOff, AlertCircle, Store, Check, RotateCcw, ShieldCheck, FileText } from "lucide-react";
+import { TermsDocument, TERMS_VERSION } from "./TermsDocument";
 
 /**
  * Schritt-Anzeige für den Onboarding-Wizard (Schritt 1: Lizenz, Schritt 2: Konto).
@@ -56,6 +57,10 @@ export default function LicenseActivation() {
   const [storeName, setStoreName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // CGU: erst nach Scroll-Ans Ende + Akzeptieren wird Aktiviert
+  const [scrolledEnd, setScrolledEnd] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const termsRef = useRef<HTMLDivElement>(null);
   const locale = lang === "fr" ? "fr-FR" : "de-DE";
 
   // Aktivierungs-Link: ?key=...&store=... aus der URL vorbelegen
@@ -69,10 +74,14 @@ export default function LicenseActivation() {
 
   async function handleActivate(e: React.FormEvent) {
     e.preventDefault();
+    if (!accepted || !scrolledEnd) {
+      setError(t("termsAcceptRequired"));
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      await activate(licenseKey.trim(), storeName.trim());
+      await activate(licenseKey.trim(), storeName.trim(), TERMS_VERSION);
       // Key nach erfolgreicher Aktivierung aus der Adresszeile entfernen
       window.history.replaceState(null, "", window.location.pathname);
     } catch (err) {
@@ -137,6 +146,57 @@ export default function LicenseActivation() {
           <WizardSteps current={1} />
         </div>
 
+        {/* CGU — muss durchgelesen + akzeptiert werden, mobile-first */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <FileText className="h-3.5 w-3.5" />
+            {t("termsTitle")}
+          </div>
+          <div
+            ref={termsRef}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+              if (atEnd && !scrolledEnd) setScrolledEnd(true);
+            }}
+            className="max-h-[38vh] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 sm:max-h-80 dark:border-slate-700 dark:bg-slate-900/50"
+          >
+            <TermsDocument />
+          </div>
+          <p
+            className={`flex items-center gap-1.5 text-xs transition-colors ${
+              scrolledEnd
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-slate-400 dark:text-slate-500"
+            }`}
+          >
+            {scrolledEnd ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                {t("termsScrolledAll")}
+              </>
+            ) : (
+              t("termsScrollHint")
+            )}
+          </p>
+          <label
+            className={`flex items-start gap-2.5 rounded-xl border p-3 text-sm transition-colors ${
+              accepted
+                ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20"
+                : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40"
+            } ${!scrolledEnd ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+          >
+            <input
+              type="checkbox"
+              checked={accepted}
+              disabled={!scrolledEnd}
+              onChange={(e) => setAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700"
+            />
+            <span className="text-slate-700 dark:text-slate-300">{t("termsAccept")}</span>
+          </label>
+        </div>
+
         <form onSubmit={handleActivate} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("licenseKey")}</label>
@@ -165,8 +225,12 @@ export default function LicenseActivation() {
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-300">{error}</p>
           )}
 
-          <button type="submit" disabled={loading} className="btn-primary flex w-full items-center justify-center gap-2">
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
+          <button
+            type="submit"
+            disabled={loading || !accepted || !scrolledEnd}
+            className="btn-primary flex w-full items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : accepted ? <ShieldCheck className="h-5 w-5" /> : <KeyRound className="h-5 w-5" />}
             {t("licenseActivate")}
           </button>
         </form>

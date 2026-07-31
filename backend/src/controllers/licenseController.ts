@@ -146,10 +146,16 @@ export const updateLicenseKey = async (req: Request, res: Response): Promise<voi
 // ── License Activation + Verification (public) ──
 
 export const activateLicense = async (req: Request, res: Response): Promise<void> => {
-  const { licenseKey, storeName, machineId } = req.body;
+  const { licenseKey, storeName, machineId, termsVersion } = req.body;
 
   if (!licenseKey || !storeName || !machineId) {
     res.status(400).json({ success: false, error: "licenseKey, storeName und machineId erforderlich." });
+    return;
+  }
+
+  // CGU zwingend erforderlich — kein termsVersion = keine Aktivierung
+  if (!termsVersion || typeof termsVersion !== "string" || termsVersion.length > 20) {
+    res.status(400).json({ success: false, error: "CGU-Akzeptanz erforderlich (termsVersion)." });
     return;
   }
 
@@ -187,7 +193,7 @@ export const activateLicense = async (req: Request, res: Response): Promise<void
     );
     const storeId = storeResult.rows[0].id;
 
-    await client.query(`UPDATE subscriptions SET store_id = $1 WHERE license_key = $2`, [storeId, licenseKey]);
+    await client.query(`UPDATE subscriptions SET store_id = $1, terms_accepted_version = $2, terms_accepted_at = NOW() WHERE license_key = $3`, [storeId, termsVersion, licenseKey]);
 
     await client.query("COMMIT");
 
