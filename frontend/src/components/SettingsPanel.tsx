@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredToken } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
+import { API_BASE } from "../services/api";
 import { X, UserPlus, Trash2, Loader2, Tag, Plus } from "lucide-react";
 import { getCategories, createCategory, deleteCategory } from "../services/api";
 import { getCategoryLabel } from "../utils/categoryStyles";
@@ -34,7 +35,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/users", { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+      const res = await fetch(`${API_BASE}/auth/users`, { headers: { Authorization: `Bearer ${getStoredToken()}` } });
       const data = await res.json();
       if (data.success) setUsers(data.users);
     } catch {
@@ -93,7 +94,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     setError(""); setSuccess("");
     try {
-      const res = await fetch("/api/auth/users", {
+      const res = await fetch(`${API_BASE}/auth/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${getStoredToken()}` },
         body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole }),
@@ -109,7 +110,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
     if (!confirm(t("deleteConfirmUser").replace("{name}", username))) return;
     setError(""); setSuccess("");
     try {
-      const res = await fetch(`/api/auth/users/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${getStoredToken()}` } });
+      const res = await fetch(`${API_BASE}/auth/users/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${getStoredToken()}` } });
       const data = await res.json();
       if (!data.success) { setError(data.error || t("deleteFailed")); return; }
       setSuccess(t("userDeleted").replace("{name}", username));

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
+import { API_BASE } from "../services/api";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { WizardSteps } from "./LicenseActivation";
 import { Store, User, Lock, Loader2 } from "lucide-react";
@@ -29,7 +30,7 @@ export default function SetupView() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/setup", {
+      const res = await fetch(`${API_BASE}/auth/setup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

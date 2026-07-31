@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  // Capacitor lädt die App aus capacitor:// oder file:// — relative Pfade nötig
+  base: "./",
   server: {
     host: true,
     port: 3000,
@@ -12,5 +14,8 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  build: {
+    outDir: "dist",
   },
 });

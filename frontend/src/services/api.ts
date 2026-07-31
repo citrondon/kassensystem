@@ -17,7 +17,8 @@ import {
 import { getStoredToken } from "../contexts/AuthContext";
 import { getStoredLicenseToken } from "../contexts/LicenseContext";
 
-const API_BASE = "/api";
+// Web: relative "/api" (Vite proxy → backend). APK: absolute URL to server.
+export const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
 function authHeaders(): Record<string, string> {
   const token = getStoredToken();

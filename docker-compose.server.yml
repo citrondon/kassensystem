@@ -34,10 +34,12 @@ services:
       DB_SSL: "false"
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt (env-file)}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
-      CORS_ORIGIN: "true"
+      CORS_ORIGIN: "*"
+      OTA_UPLOAD_KEY: ${OTA_UPLOAD_KEY:-}
     # Kein Host-Port: App ist nur ueber Caddy (app.<domain>) erreichbar
     volumes:
       - uploads:/app/backend/uploads
+      - ota_bundles:/app/backend/ota-bundles
     depends_on:
       db:
         condition: service_healthy
@@ -60,5 +62,6 @@ services:
 volumes:
   pgdata:
   uploads:
+  ota_bundles:
   caddy_data:
   caddy_config:

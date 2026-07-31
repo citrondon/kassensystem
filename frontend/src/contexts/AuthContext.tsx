@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User } from "../types";
+import { API_BASE } from "../services/api";
 
 interface AuthContextValue {
   user: User | null;
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function fetchUser(authToken: string) {
-    const res = await fetch("/api/auth/me", {
+    const res = await fetch(`${API_BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     if (!res.ok) {
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(username: string, password: string) {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),

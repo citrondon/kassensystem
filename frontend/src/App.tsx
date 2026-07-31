@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LicenseProvider, useLicense } from "./contexts/LicenseContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { API_BASE } from "./services/api";
+import { checkForOTAUpdate, applyOTAUpdate, getAppVersionInfo } from "./services/ota";
+import { RefreshCw } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
 import Dashboard from "./components/Dashboard";
@@ -23,8 +26,18 @@ function AppContent() {
   const [selectedStore, setSelectedStore] = useState<{ id: number; name: string } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [otaReady, setOtaReady] = useState(false);
   const { user, loading } = useAuth();
   const { state: licenseState } = useLicense();
+
+  // OTA update check on startup
+  useEffect(() => {
+    checkForOTAUpdate().then((updated) => {
+      if (updated) setOtaReady(true);
+    });
+  }, []);
+
+  const appVersion = getAppVersionInfo();
 
   // Hash-based store detail navigation
   useEffect(() => {
@@ -48,7 +61,7 @@ function AppContent() {
   useEffect(() => {
     if (licenseState === "active" || licenseState === "offline-grace") {
       if (!user && !loading) {
-        fetch("/api/auth/setup-status")
+        fetch(`${API_BASE}/auth/setup-status`)
           .then((r) => r.json())
           .then((data) => {
             if (data.success && data.needsSetup) {
@@ -84,6 +97,21 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      {/* OTA Update Banner */}
+      {otaReady && (
+        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-teal-700 px-4 py-3 text-white shadow-lg dark:bg-teal-600">
+          <div className="flex items-center gap-3">
+            <RefreshCw className="h-5 w-5" />
+            <span className="text-sm font-medium">Update verfügbar</span>
+            <button
+              onClick={() => applyOTAUpdate()}
+              className="rounded bg-white px-3 py-1 text-sm font-bold text-teal-700 hover:bg-teal-50"
+            >
+              Jetzt neu laden
+            </button>
+          </div>
+        </div>
+      )}
       <Header onOpenSettings={() => setShowSettings(true)} />
       <Sidebar active={view === "store-detail" ? "analytics" : view} onChange={setView} />
       <div className="p-3 pb-28 pt-16 lg:ml-64 lg:p-6 lg:pb-6 lg:pt-16">

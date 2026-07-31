@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
+import { API_BASE } from "../services/api";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Lock, User, Loader2, Info, AlertCircle } from "lucide-react";
 
@@ -15,7 +16,7 @@ export default function LoginView() {
 
   // Hinweis anzeigen, wenn das Erst-Setup bereits abgeschlossen ist
   useEffect(() => {
-    fetch("/api/auth/setup-status")
+    fetch(`${API_BASE}/auth/setup-status`)
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.needsSetup === false) {
