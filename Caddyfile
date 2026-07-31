@@ -1,0 +1,17 @@
+# Mon Comptoir — VPS-Reverse-Proxy (automatisches HTTPS via Let's Encrypt)
+# Variablen kommen aus der Compose-Umgebung (.env.server):
+#   DOMAIN      = moncomptoir.bj        -> Landing-Page (website/)
+#   APP_DOMAIN  = app.moncomptoir.bj    -> Kassensystem (Web-App + API)
+
+# Landing-Page (statisch)
+{$DOMAIN}, www.{$DOMAIN} {
+	root * /srv/website
+	file_server
+	encode zstd gzip
+}
+
+# Kassensystem (Backend serviert Frontend-Build + /api auf Port 5000)
+{$APP_DOMAIN} {
+	reverse_proxy app:5000
+	encode zstd gzip
+}

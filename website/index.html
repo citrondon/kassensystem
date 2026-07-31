@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Comptoir — Caisse & Gestion de Boutique</title>
+  <meta name="description" content="Mon Comptoir : le point de vente simple et fiable pour petits commerces, cafés et bars au Cameroun et en Afrique francophone.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FDFBF7;
+      --surface: #FFFFFF;
+      --text: #1C1917;
+      --muted: #78716C;
+      --border: #E7E5E4;
+      --primary: #C2410C;
+      --primary-hover: #9A3412;
+      --primary-light: #FFF7ED;
+      --secondary: #0F766E;
+      --secondary-hover: #115E59;
+      --radius: 14px;
+      --radius-lg: 18px;
+      --shadow-sm: 0 1px 2px rgba(28,24,23,0.04);
+      --shadow: 0 4px 12px rgba(28,24,23,0.06);
+      --shadow-lg: 0 12px 32px rgba(28,24,23,0.08);
+      --max-width: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Playfair Display', Georgia, serif;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    img { max-width: 100%; display: block; }
+
+    .container {
+      width: min(100% - 2.5rem, var(--max-width));
+      margin-inline: auto;
+    }
+
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(253,251,247,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .logo-mark {
+      width: 2rem;
+      height: 2rem;
+      background: var(--primary);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 2rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .nav-links a { color: var(--muted); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.25rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:hover { border-color: var(--muted); }
+
+    .menu-btn {
+      display: grid;
+      width: 2.25rem;
+      height: 2.25rem;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem 0 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-nav a {
+      padding: 0.65rem 0.5rem;
+      font-weight: 500;
+      color: var(--muted);
+      border-radius: 8px;
+    }
+
+    .mobile-nav a:hover { background: var(--primary-light); color: var(--primary); }
+
+    /* Sections */
+    section { padding: 5rem 0; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.9rem;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 1.5rem;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 4.2vw, 2.6rem);
+      max-width: 620px;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 620px;
+      margin-bottom: 2.5rem;
+    }
+
+    /* Hero */
+    .hero {
+      padding-top: 4rem;
+      padding-bottom: 5rem;
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      margin-bottom: 1.25rem;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 2rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .hero-visual {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .pos-card {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .pos-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+
+    .pos-row strong { color: var(--text); }
+    .pos-row span { color: var(--muted); }
+
+    .pos-total {
+      display: flex;
+      justify-content: space-between;
+      padding: 1rem;
+      background: var(--primary-light);
+      border: 1px dashed var(--primary);
+      border-radius: 10px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .pos-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .key {
+      padding: 0.8rem;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .key.wide { grid-column: span 2; background: var(--primary); color: #fff; }
+
+    /* Problem */
+    .problem-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .problem-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .problem-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .problem-card p { color: var(--muted); margin: 0; }
+
+    .icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 1rem;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    /* Audience */
+    .audience-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .audience-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .audience-card:hover { border-color: var(--secondary); box-shadow: var(--shadow); }
+
+    .audience-card .emoji { font-size: 2rem; margin-bottom: 0.5rem; }
+    .audience-card h4 { font-size: 1.05rem; font-family: 'Inter', sans-serif; font-weight: 600; }
+
+    /* Features */
+    .feature-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .feature-card {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .feature-card .icon {
+      flex: 0 0 auto;
+      margin: 0;
+      background: rgba(15,118,110,0.08);
+      color: var(--secondary);
+    }
+
+    .feature-card h4 { font-size: 1.1rem; font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 0.35rem; }
+    .feature-card p { color: var(--muted); font-size: 0.95rem; margin: 0; }
+
+    /* Benefits */
+    .benefit-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .benefit-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .benefit-check {
+      flex: 0 0 auto;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 0.15rem;
+    }
+
+    .benefit-item h4 { font-size: 1.1rem; font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 0.25rem; }
+    .benefit-item p { color: var(--muted); font-size: 0.95rem; margin: 0; }
+
+    /* Steps */
+    .steps {
+      display: grid;
+      gap: 1.5rem;
+      counter-reset: step;
+    }
+
+    .step {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      padding-left: 5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 1.25rem;
+      top: 1.75rem;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .step h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .step p { color: var(--muted); margin: 0; }
+
+    /* Testimonials */
+    .testimonial-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .testimonial {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .testimonial p { font-style: italic; color: var(--text); margin: 0 0 1rem; }
+    .testimonial cite { color: var(--muted); font-size: 0.9rem; font-style: normal; font-weight: 500; }
+    .testimonial .tag { font-size: 0.75rem; color: var(--muted); display: block; margin-top: 0.2rem; }
+
+    /* Pricing */
+    .pricing-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .plan {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .plan.featured { border-color: var(--primary); position: relative; }
+
+    .plan-badge {
+      position: absolute;
+      top: -0.7rem;
+      right: 1rem;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .plan h3 { font-size: 1.35rem; margin-bottom: 0.4rem; }
+    .plan .price { font-size: 2rem; font-weight: 700; margin: 0.8rem 0; }
+    .plan .price span { font-size: 0.95rem; color: var(--muted); font-weight: 500; }
+    .plan ul { list-style: none; padding: 0; margin: 1.25rem 0; }
+    .plan li { display: flex; gap: 0.5rem; color: var(--muted); font-size: 0.95rem; margin-bottom: 0.55rem; }
+    .plan li::before { content: '✓'; color: var(--secondary); font-weight: 700; }
+    .plan .btn { width: 100%; }
+
+    /* CTA */
+    .cta {
+      text-align: center;
+      background: var(--primary-light);
+      border-radius: var(--radius-lg);
+      padding: 4rem 1.5rem;
+    }
+
+    .cta h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin-bottom: 0.8rem; }
+    .cta p { color: var(--muted); max-width: 520px; margin: 0 auto 1.75rem; }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .footer-grid {
+      display: grid;
+      gap: 2rem;
+    }
+
+    .footer-brand { max-width: 280px; }
+    .footer-brand strong { color: var(--text); display: block; margin-bottom: 0.5rem; }
+
+    .footer-links h4 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .footer-links a {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--primary); }
+
+    .copyright {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    /* Reveal animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.in-view { opacity: 1; transform: none; }
+
+    /* Responsive */
+    @media (min-width: 640px) {
+      .problem-grid,
+      .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .feature-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 1024px) {
+      .nav-links { display: flex; }
+      .menu-btn { display: none; }
+      .mobile-nav { display: none !important; }
+
+      .hero-grid { grid-template-columns: 1fr 1fr; gap: 4rem; }
+      .hero-visual { padding: 1.75rem; }
+
+      .problem-grid { grid-template-columns: repeat(3, 1fr); }
+      .audience-grid { grid-template-columns: repeat(4, 1fr); }
+      .feature-grid { grid-template-columns: repeat(2, 1fr); }
+      .benefit-list { grid-template-columns: repeat(2, 1fr); }
+      .steps { grid-template-columns: repeat(3, 1fr); }
+      .testimonial-grid { grid-template-columns: repeat(3, 1fr); }
+      .pricing-grid { grid-template-columns: repeat(3, 1fr); align-items: start; }
+
+      .footer-grid {
+        grid-template-columns: 1.8fr 1fr 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="#" class="logo">
+        <span class="logo-mark">M</span>
+        Mon Comptoir
+      </a>
+      <nav class="nav-links">
+        <a href="#probleme">Le problème</a>
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#avantages">Avantages</a>
+        <a href="#comment">Comment ça marche</a>
+        <a href="#tarifs">Tarifs</a>
+      </nav>
+      <a class="btn btn-primary" href="#contact">Démarrer</a>
+      <button class="menu-btn" aria-label="Ouvrir le menu">☰</button>
+    </div>
+    <div class="container mobile-nav">
+      <a href="#probleme">Le problème</a>
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#avantages">Avantages</a>
+      <a href="#comment">Comment ça marche</a>
+      <a href="#tarifs">Tarifs</a>
+      <a href="#contact">Démarrer</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="reveal">
+          <span class="eyebrow">Caisse & gestion de boutique</span>
+          <h1>Gérez votre boutique en toute simplicité.</h1>
+          <p>Mon Comptoir est un point de vente pensé pour les petits commerces, cafés, bars et épiceries au Bénin et en Afrique francophone. Vendez, suivez votre stock et analysez vos recettes, même hors ligne.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#contact">Découvrir Mon Comptoir</a>
+            <a class="btn btn-secondary" href="#demo">Voir la démo</a>
+          </div>
+        </div>
+        <div class="hero-visual reveal">
+          <div class="pos-card">
+            <div class="pos-row"><span>Café au lait</span><strong>1 200 FCFA</strong></div>
+            <div class="pos-row"><span>Croissant</span><strong>800 FCFA</strong></div>
+            <div class="pos-row"><span>Eau minérale</span><strong>500 FCFA</strong></div>
+            <div class="pos-total"><span>Total</span><span>2 500 FCFA</span></div>
+            <div class="pos-keypad">
+              <div class="key">1</div>
+              <div class="key">2</div>
+              <div class="key">3</div>
+              <div class="key">4</div>
+              <div class="key">5</div>
+              <div class="key">6</div>
+              <div class="key">7</div>
+              <div class="key">8</div>
+              <div class="key">9</div>
+              <div class="key">C</div>
+              <div class="key">0</div>
+              <div class="key">⌫</div>
+              <div class="key wide">Payer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problem -->
+    <section id="probleme">
+      <div class="container">
+        <div class="reveal">
+          <span class="eyebrow">Pourquoi Mon Comptoir ?</span>
+          <h2 class="section-title">Le quotidien d’un petit commerçant est déjà assez chargé.</h2>
+          <p class="section-subtitle">Entre les clients, les fournisseurs et la paperasse, il manque souvent un outil simple pour garder le contrôle.</p>
+        </div>
+        <div class="problem-grid">
+          <div class="problem-card reveal">
+            <div class="icon">💸</div>
+            <h3>Chaos comptant</h3>
+            <p>Les ventes en espèces s’accumulent sans trace claire. À la fin de la journée, impossible de savoir exactement ce qui a été vendu.</p>
+          </div>
+          <div class="problem-card reveal">
+            <div class="icon">📦</div>
+            <h3>Stock invisible</h3>
+            <p>Sans suivi des produits, on manque de marchandise au mauvais moment — ou on en achète trop sans s’en apercevoir.</p>
+          </div>
+          <div class="problem-card reveal">
+            <div class="icon">🏪</div>
+            <h3>Multi-boutiques perdues</h3>
+            <p>Ouvrir un deuxième point de vente devient un casse-tête quand chaque caisse vit sur son propre registre.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Audience -->
+    <section id="public">
+      <div class="container">
+        <div class="reveal">
+          <span class="eyebrow">Pour qui ?</span>
+          <h2 class="section-title">Conçu pour les commerces de proximité.</h2>
+          <p class="section-subtitle">Que vous vendiez du café, des provisions ou des plats à emporter, Mon Comptoir s’adapte à votre rythme.</p>
+        </div>
+        <div class="audience-grid">
+          <div class="audience-card reveal"><div class="emoji">🛒</div><h4>Épiceries & boutiques</h4></div>
+          <div class="audience-card reveal"><div class="emoji">☕</div><h4>Cafés & bars</h4></div>
+          <div class="audience-card reveal"><div class="emoji">🍔</div><h4>Restaurants & street food</h4></div>
+          <div class="audience-card reveal"><div class="emoji">🏷️</div><h4>Petits commerçants</h4></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="fonctionnalites">
+      <div class="container">
+        <div class="reveal">
+          <span class="eyebrow">Fonctionnalités</span>
+          <h2 class="section-title">Tout ce qu’il faut pour vendre sereinement.</h2>
+          <p class="section-subtitle">Une caisse rapide, un inventaire clair et des chiffres qui aident à décider.</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card reveal">
+            <div class="icon">⚡</div>
+            <div>
+              <h4>Caisse rapide et intuitive</h4>
+              <p>Interface pensée pour la vitesse en magasin : ajoutez des articles, appliquez des remises, encaissez en quelques touches.</p>
+            </div>
+          </div>
+          <div class="feature-card reveal">
+            <div class="icon">📦</div>
+            <div>
+              <h4>Gestion des produits et stocks</h4>
+              <p>Catéggorisez vos articles, suivez les quantités et recevez des alertes avant la rupture.</p>
+            </div>
+          </div>
+          <div class="feature-card reveal">
+            <div class="icon">📊</div>
+            <div>
+              <h4>Suivi des ventes en temps réel</h4>
+              <p>Voyez immédiatement ce qui se vend, à quelle heure et par quel caissier.</p>
+            </div>
+          </div>
+          <div class="feature-card reveal">
+            <div class="icon">🏪</div>
+            <div>
+              <h4>Multi-boutiques & analytics</h4>
+              <p>Gérez plusieurs points de vente depuis un seul compte et comparez leurs performances.</p>
+            </div>
+          </div>
+          <div class="feature-card reveal">
+            <div class="icon">🌐</div>
+            <div>
+              <h4>Mode hors-ligne résilient</h4>
+              <p>Continuez à vendre même quand la connexion est faible. Les données se synchronisent dès le retour en ligne.</p>
+            </div>
+          </div>
+          <div class="feature-card reveal">
+            <div class="icon">👥</div>
+            <div>
+              <h4>Gestion des utilisateurs</h4>
+              <p>Caissiers, managers et développeurs disposent chacun des droits adaptés à leur rôle.</p>
+            </div>
+          </div>
+          <div class="feature-card reveal">
+            <div class="icon">🔑</div>
+            <div>
+              <h4>Licences flexibles</h4>
+              <p>Activation par licence, avec une période de grâce hors-ligne pour ne jamais être bloqué.</p>
+            </div>
+          </div>
+          <div class="feature-card reveal">
+            <div class="icon">🌙</div>
+            <div>
+              <h4>Dark & light mode</h4>
+              <p>Choisissez l’affichage qui convient à votre environnement et à vos yeux.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Benefits -->
+    <section id="avantages">
+      <div class="container">
+        <div class="reveal">
+          <span class="eyebrow">Avantages</span>
+          <h2 class="section-title">Ce que Mon Comptoir change pour votre commerce.</h2>
+          <p class="section-subtitle">Moins de friction, plus de visibilité, plus de temps pour vos clients.</p>
+        </div>
+        <div class="benefit-list">
+          <div class="benefit-item reveal">
+            <div class="benefit-check">✓</div>
+            <div>
+              <h4>Gain de temps</h4>
+              <p>Encaissements, clôtures de caisse et rapports se font en quelques clics, pas en feuilles Excel.</p>
+            </div>
+          </div>
+          <div class="benefit-item reveal">
+            <div class="benefit-check">✓</div>
+            <div>
+              <h4>Meilleure visibilité</h4>
+              <p>Tableaux de bord clairs pour comprendre vos bestsellers, vos heures creuses et vos marges.</p>
+            </div>
+          </div>
+          <div class="benefit-item reveal">
+            <div class="benefit-check">✓</div>
+            <div>
+              <h4>Sécurité des données</h4>
+              <p>Authentification sécurisée, rôles granulaires et stockage fiable sur PostgreSQL.</p>
+            </div>
+          </div>
+          <div class="benefit-item reveal">
+            <div class="benefit-check">✓</div>
+            <div>
+              <h4>Évolutivité</h4>
+              <p>Commencez avec une caisse. Ajoutez des boutiques, des caissiers et des fonctionnalités au fil de votre croissance.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="comment">
+      <div class="container">
+        <div class="reveal">
+          <span class="eyebrow">Comment ça marche</span>
+          <h2 class="section-title">Trois étapes pour moderniser votre caisse.</h2>
+          <p class="section-subtitle">Pas de formation complexe. Pas d’installation lourde. On démarre en minutes.</p>
+        </div>
+        <div class="steps">
+          <div class="step reveal">
+            <h3>Activer la licence</h3>
+            <p>Créez votre compte et activez votre licence. Une période d’essai vous permet de tester tout l’outil.</p>
+          </div>
+          <div class="step reveal">
+            <h3>Configurer votre boutique</h3>
+            <p>Ajoutez vos produits, vos prix, vos utilisateurs et personnalisez l’affichage selon votre activité.</p>
+          </div>
+          <div class="step reveal">
+            <h3>Commencer à vendre</h3>
+            <p>Ouvrez la caisse, servez vos clients et suivez vos ventes en direct depuis n’importe quel appareil.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="temoignages">
+      <div class="container">
+        <div class="reveal">
+          <span class="eyebrow">Témoignages</span>
+          <h2 class="section-title">Ils ont adopté Mon Comptoir.</h2>
+          <p class="section-subtitle">Des retours d’expérience de commerçants qui gagnent du temps chaque jour.</p>
+        </div>
+        <div class="testimonial-grid">
+          <div class="testimonial reveal">
+            <p>« Avant, je notais mes ventes sur un carnet. Maintenant, je sais exactement combien j’ai fait en fin de journée. »</p>
+            <cite>Aïcha M.<span class="tag">Épicerie, Cotonou</span></cite>
+          </div>
+          <div class="testimonial reveal">
+            <p>« Mon Comptoir est simple, même pour mes caissiers qui ne sont pas à l’aise avec l’informatique. »</p>
+            <cite>Jean-Pierre K.<span class="tag">Café-restaurant, Porto-Novo</span></cite>
+          </div>
+          <div class="testimonial reveal">
+            <p>« J’ai ouvert une seconde boutique et je peux suivre les deux caisses depuis mon téléphone. »</p>
+            <cite>Françoise T.<span class="tag">Boutique de prêt-à-porter, Parakou</span></cite>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="tarifs">
+      <div class="container">
+        <div class="reveal">
+          <span class="eyebrow">Tarifs</span>
+          <h2 class="section-title">Des formules adaptées à votre taille.</h2>
+          <p class="section-subtitle">Commencez gratuitement. Faites évoluer votre abonnement quand votre commerce grandit.</p>
+        </div>
+        <div class="pricing-grid">
+          <div class="plan reveal">
+            <h3>Trial</h3>
+            <p style="color:var(--muted); font-size:0.95rem; margin-top:-0.3rem;">Pour tester</p>
+            <div class="price">0 FCFA<span>/ 7 jours</span></div>
+            <ul>
+              <li>1 boutique</li>
+              <li>1 caissier</li>
+              <li>50 produits</li>
+              <li>Suivi des ventes basique</li>
+              <li>Support par email</li>
+            </ul>
+            <a class="btn btn-secondary" href="#contact">Essayer gratuitement</a>
+          </div>
+          <div class="plan featured reveal">
+            <span class="plan-badge">Populaire</span>
+            <h3>Basic</h3>
+            <p style="color:var(--muted); font-size:0.95rem; margin-top:-0.3rem;">Pour les indépendants</p>
+            <div class="price">5 000 FCFA<span>/ mois</span></div>
+            <ul>
+              <li>1 boutique</li>
+              <li>3 utilisateurs</li>
+              <li>Produits illimités</li>
+              <li>Rapports de vente</li>
+              <li>Mode hors-ligne</li>
+            </ul>
+            <a class="btn btn-primary" href="#contact">Choisir Basic</a>
+          </div>
+          <div class="plan reveal">
+            <h3>Pro</h3>
+            <p style="color:var(--muted); font-size:0.95rem; margin-top:-0.3rem;">Pour les réseaux</p>
+            <div class="price">Sur demande</div>
+            <ul>
+              <li>Boutiques illimitées</li>
+              <li>Utilisateurs illimités</li>
+              <li>Analytics avancées</li>
+              <li>Comparatif multi-boutiques</li>
+              <li>Support prioritaire</li>
+            </ul>
+            <a class="btn btn-secondary" href="#contact">Nous contacter</a>
+          </div>
+        </div>
+        <p class="section-subtitle" style="text-align:center; margin-top:1.5rem; margin-bottom:0; font-size:0.9rem;">Les paiements en ligne ne sont pas encore intégrés. Les formules sont fournies à titre indicatif.</p>
+      </div>
+    </section>
+
+    <!-- CTA / Contact -->
+    <section id="contact">
+      <div class="container">
+        <div class="cta reveal">
+          <h2>Prêt à moderniser votre caisse ?</h2>
+          <p>Demandez une démo personnalisée ou lancez votre essai gratuit. L’équipe Mon Comptoir vous accompagne à chaque étape.</p>
+          <div class="hero-actions" style="justify-content:center;">
+            <a class="btn btn-primary" href="mailto:contact@moncomptoir.app">Demander une démo</a>
+            <a class="btn btn-secondary" href="#demo">Voir la démo en ligne</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <strong>Mon Comptoir</strong>
+        <p>Le point de vente simple et fiable pour les commerces de proximité en Afrique francophone.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Produit</h4>
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#tarifs">Tarifs</a>
+        <a href="#comment">Comment ça marche</a>
+      </div>
+      <div class="footer-links">
+        <h4>Ressources</h4>
+        <a href="#demo">Démo</a>
+        <a href="#">Documentation</a>
+        <a href="#">FAQ</a>
+      </div>
+      <div class="footer-links">
+        <h4>Contact</h4>
+        <a href="mailto:contact@moncomptoir.app">contact@moncomptoir.app</a>
+        <a href="#">LinkedIn</a>
+      </div>
+    </div>
+    <div class="container copyright">
+      © 2026 Mon Comptoir. Tous droits réservés.
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const menuBtn = document.querySelector('.menu-btn');
+    const mobileNav = document.querySelector('.mobile-nav');
+    let menuOpen = false;
+
+    menuBtn.addEventListener('click', () => {
+      menuOpen = !menuOpen;
+      mobileNav.style.display = menuOpen ? 'flex' : 'none';
+      menuBtn.textContent = menuOpen ? '✕' : '☰';
+    });
+
+    document.querySelectorAll('.mobile-nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        menuOpen = false;
+        mobileNav.style.display = 'none';
+        menuBtn.textContent = '☰';
+      });
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

@@ -4,6 +4,7 @@ backend/dist-static/
 .env
 .env.test
 .env.production
+.env.server
 provision.env
 provisioned/
 *.local

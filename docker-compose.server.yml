@@ -1,0 +1,64 @@
+# VPS-Stack mit Domain: Caddy (HTTPS) + App (Dockerfile-Build) + PostgreSQL
+# Voraussetzung: DNS bei site.de -> A-Records von moncomptoir.bj, www und app. auf die Server-IP.
+# Start:
+#   cp .env.server.example .env.server   # Werte anpassen!
+#   docker compose --env-file .env.server -f docker-compose.server.yml up -d --build
+name: moncomptoir
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN fehlt (env-file)}
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN fehlt (env-file)}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./website:/srv/website:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      # Compose-interne DB — DB_SSL=false, weil der Postgres-Container kein SSL kann
+      DATABASE_URL: postgres://${POSTGRES_USER:-posuser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt (env-file)}@db:5432/${POSTGRES_DB:-posdb}
+      DB_SSL: "false"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt (env-file)}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      CORS_ORIGIN: "true"
+    # Kein Host-Port: App ist nur ueber Caddy (app.<domain>) erreichbar
+    volumes:
+      - uploads:/app/backend/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-posuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt (env-file)}
+      POSTGRES_DB: ${POSTGRES_DB:-posdb}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

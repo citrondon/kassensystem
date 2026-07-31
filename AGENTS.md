@@ -143,6 +143,11 @@ npm run test
 - `npm run build` – Produktiv-Build
 - `npm run preview` – Preview des Builds
 
+**Video** (`cd video/`):
+- `npm run dev` – Remotion Studio (Vorschau im Browser)
+- `npx remotion render Promo out/mon-comptoir-promo.mp4` – Video rendern
+- `npx remotion still Promo out/frame.png --frame=N` – Einzelbild prüfen
+
 ### Projektstruktur
 
 ```
@@ -168,6 +173,14 @@ npm run test
 │   │   ├── App.tsx         # Haupt-Layout
 │   │   └── types.ts        # TypeScript-Typen
 │   └── vite.config.ts      # Vite-Config mit Proxy
+├── video/           # Remotion Werbevideo (9:16, Französisch, Mon-Comptoir-Branding)
+│   ├── src/
+│   │   ├── scenes/         # Motion-Graphics-Szenen (Hook, Brand, Offline, Audience, CTA)
+│   │   ├── components/     # Logo, WordStagger, CountUp, SceneTitle, Background, LiveAppScene (Phone-Frame + App-Aufnahmen)
+│   │   ├── theme.ts        # Farben + Fonts (Inter, Playfair Display) wie Website
+│   │   └── Promo.tsx       # Haupt-Komposition (1544 Frames, 30 fps, ~51,5 s)
+│   ├── public/recordings/  # Echte App-Screenrecordings (vente/inventaire/analytics.mp4, via Playwright aufgezeichnet)
+│   └── out/                # Gerenderte MP4s (gitignored)
 ├── db/
 │   └── init.sql            # DB-Schema + Demo-Daten (erster Docker-Start)
 └── docker-compose.yml      # PostgreSQL-Container
@@ -198,7 +211,28 @@ npm run test
 
 **Modell:** Mon Comptoir = Multi-Kunden-Produkt, **eine Instanz pro Kunde** (kein Multi-Tenancy). Hosting-Ziel: eigener VPS mit einem Docker-Compose-Stack pro Kunde. **Render ist Interim** (Zentralserver für Lizenz/Analytics + Pilot-Instanz).
 
-### Dateien
+### Eigener VPS mit Domain (moncomptoir.bj)
+
+Stack: **Caddy** (Reverse-Proxy, automatisches HTTPS) + App + PostgreSQL.
+
+| Datei | Zweck |
+|-------|-------|
+| `Caddyfile` | Routing: `moncomptoir.bj` + `www` → Landing-Page (`website/`, statisch), `app.moncomptoir.bj` → Kassensystem (Port 5000) |
+| `docker-compose.server.yml` | VPS-Stack: caddy + app + db |
+| `.env.server.example` | Template (`DOMAIN`, `APP_DOMAIN`, `POSTGRES_*`, `JWT_*`) — `.env.server` ist gitignored |
+
+**DNS bei site.de (A-Records auf die Server-IP):** `moncomptoir.bj`, `www.moncomptoir.bj`, `app.moncomptoir.bj`.
+
+**Deploy auf dem Server:**
+```bash
+git clone <repo> && cd kassensystem
+cp .env.server.example .env.server   # Werte anpassen!
+docker compose --env-file .env.server -f docker-compose.server.yml up -d --build
+curl https://app.moncomptoir.bj/health   # {"status":"ok"}
+```
+Caddy holt die Let's-Encrypt-Zertifikate automatisch, sobald DNS auf den Server zeigt. Die `mobile/`-APK ist aktuell rein offline (SQLite, keine API-Calls) und braucht den Server nicht.
+
+### Kunden-Stacks (Provisionierung)
 
 | Datei | Zweck |
 |-------|-------|
