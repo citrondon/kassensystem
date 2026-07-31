@@ -20,7 +20,6 @@ for arg in "$@"; do
     *) if [ -z "$VERSION" ]; then VERSION="$arg"; fi ;;
   esac
 done
-VERSION="${VERSION:-v$(date +%Y%m%d-%H%M)}"
 
 # Load OTA_UPLOAD_KEY from provision.env if not set
 if [ -z "${OTA_UPLOAD_KEY:-}" ]; then
@@ -32,6 +31,35 @@ if [ -z "${OTA_UPLOAD_KEY:-}" ]; then
   echo "ERROR: OTA_UPLOAD_KEY not set. Set it in provision.env or as env var."
   exit 1
 fi
+
+VPS_URL="${VPS_URL:-http://37.114.41.246:5000}"
+
+# Subcommand: rollback
+if [ "${VERSION}" = "rollback" ]; then
+  echo "=== OTA Rollback ==="
+  curl -s -X POST -H "X-OTA-Key: $OTA_UPLOAD_KEY" "$VPS_URL/api/app-version/rollback" | python3 -m json.tool 2>/dev/null || echo "rollback failed"
+  exit 0
+fi
+
+# Subcommand: unstore <storeId>
+if [ "${VERSION}" = "unstore" ]; then
+  if [ -z "${STORE_ID}" ]; then
+    echo "ERROR: unstore needs --store=ID"
+    exit 1
+  fi
+  echo "=== OTA Unpin store ${STORE_ID} ==="
+  curl -s -X DELETE -H "X-OTA-Key: $OTA_UPLOAD_KEY" "$VPS_URL/api/app-version/set-store/${STORE_ID}" | python3 -m json.tool 2>/dev/null || echo "unpin failed"
+  exit 0
+fi
+
+# Subcommand: status
+if [ "${VERSION}" = "status" ]; then
+  echo "=== OTA Status ==="
+  curl -s "$VPS_URL/api/app-version" | python3 -m json.tool 2>/dev/null || echo "status failed"
+  exit 0
+fi
+
+VERSION="${VERSION:-v$(date +%Y%m%d-%H%M)}"
 
 echo "=== OTA Deploy: $VERSION ==="
 
@@ -50,7 +78,6 @@ ZIP_SIZE=$(stat -c%s "$ZIP_PATH" 2>/dev/null || stat -f%z "$ZIP_PATH")
 echo "  Bundle size: $ZIP_SIZE bytes"
 
 # 3. Upload
-VPS_URL="${VPS_URL:-http://37.114.41.246:5000}"
 CHECKSUM=$(sha256sum "$ZIP_PATH" | cut -d' ' -f1)
 echo "→ Uploading to $VPS_URL/api/app-version/upload ..."
 
