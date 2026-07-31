@@ -30,7 +30,7 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || true,
+    origin: process.env.CORS_ORIGIN || "*",
   })
 );
 app.use(express.json());
