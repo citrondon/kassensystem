@@ -75,18 +75,36 @@ export const createLicenseKey = async (req: Request, res: Response): Promise<voi
 
 /**
  * PATCH /api/license/keys/:key
- * Body: { action: "extend"|"cancel"|"reactivate", durationDays? }
+ * Body: { action: "extend"|"cancel"|"reactivate"|"release", durationDays? }
+ *   "release" löst die Bindung des Keys vom aktuellen Gerät (Handywechsel).
  */
 export const updateLicenseKey = async (req: Request, res: Response): Promise<void> => {
   const { key } = req.params;
   const { action, durationDays } = req.body;
 
-  if (!["extend", "cancel", "reactivate"].includes(action)) {
-    res.status(400).json({ success: false, error: "action muss extend, cancel oder reactivate sein." });
+  if (!["extend", "cancel", "reactivate", "release"].includes(action)) {
+    res.status(400).json({ success: false, error: "action muss extend, cancel, reactivate oder release sein." });
     return;
   }
 
   try {
+    if (action === "release") {
+      // Key von allen Stores lösen → kann auf neuem Gerät aktiviert werden
+      const result = await pool.query(
+        `UPDATE stores SET license_key = NULL WHERE license_key = $1 RETURNING id, name, machine_id`,
+        [key]
+      );
+      await pool.query(`UPDATE subscriptions SET store_id = NULL WHERE license_key = $1`, [key]);
+
+      res.json({
+        success: true,
+        released: result.rows.length,
+        stores: result.rows,
+        message: "Lizenz vom Gerät gelöst. Kann auf neuem Gerät aktiviert werden.",
+      });
+      return;
+    }
+
     if (action === "extend") {
       const days = Number(durationDays) || 30;
       const result = await pool.query(
@@ -178,6 +196,21 @@ export const activateLicense = async (req: Request, res: Response): Promise<void
 
     if (sub.status === "cancelled" || sub.status === "suspended") {
       res.status(403).json({ success: false, error: `Lizenz ist ${sub.status}.` });
+      await client.query("ROLLBACK");
+      return;
+    }
+
+    // Prüfen ob der Key bereits an ein ANDERES Gerät gebunden ist
+    const existingStore = await client.query(
+      `SELECT id, name, machine_id FROM stores WHERE license_key = $1`,
+      [licenseKey]
+    );
+    if (existingStore.rows.length > 0 && existingStore.rows[0].machine_id !== machineId) {
+      res.status(409).json({
+        success: false,
+        error: "Lizenz bereits auf einem anderen Gerät aktiv. Kontaktieren Sie Ihren Händler.",
+        errorCode: "license_in_use",
+      });
       await client.query("ROLLBACK");
       return;
     }

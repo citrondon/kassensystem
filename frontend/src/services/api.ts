@@ -209,7 +209,7 @@ export async function activateLicense(
   storeName: string,
   machineId: string,
   termsVersion?: string
-): Promise<{ success: boolean; token: string; license: LicenseInfo; error?: string }> {
+): Promise<{ success: boolean; token: string; license: LicenseInfo; error?: string; errorCode?: string }> {
   const res = await fetch(`${API_BASE}/license/activate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

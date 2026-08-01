@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Device } from "@capacitor/device";
 import { LicenseInfo } from "../types";
 import { activateLicense, verifyLicense } from "../services/api";
 
@@ -33,11 +35,15 @@ function decodeJwtPayload(token: string): { expiresAt?: string; status?: string;
   }
 }
 
-// Generate a stable machine ID from browser fingerprint
-function getMachineId(): string {
-  const stored = localStorage.getItem("pos_machine_id");
-  if (stored) return stored;
+// ── Machine ID ────────────────────────────────────────────────
+// APK (native): ANDROID_ID via Capacitor Device plugin — stabil über
+//   App-Neuinstallationen, ändert sich nur bei Factory-Reset oder
+//   Signatur-Wechsel. Kein Fehlalarm durch WebView-Update/Sprache/Rotation.
+// Web (Browser): Fingerprint-Fallback (kein ANDROID_ID verfügbar).
 
+let machineIdPromise: Promise<string> | null = null;
+
+function fingerprintMachineId(): string {
   const parts = [
     navigator.userAgent,
     navigator.language,
@@ -50,7 +56,29 @@ function getMachineId(): string {
     hash = (hash << 5) - hash + parts.charCodeAt(i);
     hash |= 0;
   }
-  const machineId = "m-" + Math.abs(hash).toString(16).padStart(8, "0");
+  return "m-web-" + Math.abs(hash).toString(16).padStart(8, "0");
+}
+
+async function getMachineId(): Promise<string> {
+  // Gecachte ID (localStorage) hat Vorrang — auch nach Update bleibt sie stabil
+  const stored = localStorage.getItem("pos_machine_id");
+  if (stored) return stored;
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const info = await Device.getId();
+      const id = info.identifier || "";
+      if (id) {
+        const machineId = "m-android-" + id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 16);
+        localStorage.setItem("pos_machine_id", machineId);
+        return machineId;
+      }
+    } catch {
+      // Plugin nicht verfügbar → Fingerprint-Fallback
+    }
+  }
+
+  const machineId = fingerprintMachineId();
   localStorage.setItem("pos_machine_id", machineId);
   return machineId;
 }
@@ -77,7 +105,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const machineId = getMachineId();
+    const machineId = await getMachineId();
     try {
       const res = await verifyLicense(licenseKey, machineId);
       if (res.success && res.token) {
@@ -170,11 +198,15 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function activate(licenseKey: string, storeName: string, termsVersion?: string) {
-    const machineId = getMachineId();
+    const machineId = await getMachineId();
     const res = await activateLicense(licenseKey, storeName, machineId, termsVersion);
 
     if (!res.success || !res.token) {
-      throw new Error(res.error || "Aktivierung fehlgeschlagen");
+      const msg =
+        res.errorCode === "license_in_use"
+          ? "Diese Lizenz ist bereits auf einem anderen Gerät aktiv. Kontaktieren Sie Ihren Händler."
+          : res.error || "Aktivierung fehlgeschlagen";
+      throw new Error(msg);
     }
 
     localStorage.setItem(STORAGE_KEY, res.token);
