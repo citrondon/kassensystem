@@ -1,0 +1,22 @@
+appId: bj.moncomptoir.pos
+---
+# Login Flow — after license is activated
+- launchApp
+# Skip license if already activated
+- runFlow:
+    when:
+      visible: "Étape 1/2"
+    file: pos-license-flow.yaml
+# Should be on Login screen
+- assertVisible: "Nom d'utilisateur"
+- tapOn:
+    text: "Nom d'utilisateur"
+- inputText: "developer"
+- tapOn:
+    text: "Mot de passe"
+- inputText: "dev12345"
+- tapOn:
+    text: "Se connecter"
+# Should be on Dashboard
+- assertVisible: "Tableau de bord"
+- assertVisible: "Chiffre d'affaires"

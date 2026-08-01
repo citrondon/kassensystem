@@ -1,0 +1,24 @@
+appId: bj.moncomptoir.pos
+---
+# License Activation Flow — Étape 1/2: License key + Store name
+- launchApp
+- assertVisible: "Étape 1/2"
+- assertVisible: "Clé de licence"
+- tapOn:
+    text: "Clé de licence"
+- inputText: "MC-PRO-2026-DEMO-KEY"
+- tapOn:
+    text: "Nom du magasin"
+- inputText: "Test Store"
+- tapOn:
+    text: "Continuer"
+# Now on CGU terms screen
+- assertVisible: "Conditions Générales"
+- scrollUntilVisible:
+    text: "J'ai lu et j'accepte"
+- tapOn:
+    text: "J'ai lu et j'accepte"
+- tapOn:
+    text: "Activer la licence"
+# Should proceed to Setup (Étape 2/2)
+- assertVisible: "Étape 2/2"

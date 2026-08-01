@@ -1,0 +1,29 @@
+appId: bj.moncomptoir.pos
+---
+# Checkout Flow — login → cashier → scan → checkout
+- launchApp
+# Handle license if needed
+- runFlow:
+    when:
+      visible: "Étape 1/2"
+    file: pos-license-flow.yaml
+# Handle login if needed
+- runFlow:
+    when:
+      visible: "Nom d'utilisateur"
+    file: pos-login-flow.yaml
+# Navigate to cashier
+- assertVisible: "Tableau de bord"
+- tapOn: "Caisse"
+- assertVisible: "Scanner"
+# Try to open scanner (camera permission may appear)
+- tapOn: "Scanner"
+# Handle camera permission dialog (native Android)
+- runFlow:
+    when:
+      visible: "Autoriser"
+    commands:
+      - tapOn: "Autoriser"
+# Should see scanner active
+- assertVisible: "Scanner actif"
+# Note: actual barcode scanning requires camera — test manually or via CDP injection
