@@ -27,9 +27,23 @@ if env_file.exists():
 
 try:
     from browser_use import Agent, Browser
+    from langchain_openai import ChatOpenAI
 except ImportError:
-    print("pip install browser-use")
+    print("pip install browser-use langchain-openai")
     sys.exit(1)
+
+
+def get_llm():
+    """Create LLM via Fireworks (OpenAI-compatible)."""
+    key = os.environ.get("FIREWORKS_API_KEY", "")
+    if not key:
+        print("FIREWORKS_API_KEY not set. Add to .env or export.")
+        sys.exit(1)
+    return ChatOpenAI(
+        model="accounts/fireworks/models/deepseek-v4-flash",
+        api_key=key,
+        base_url="https://api.fireworks.ai/inference/v1",
+    )
 
 
 async def explore(target: str = "full"):
@@ -74,7 +88,7 @@ Report:
 
     agent = Agent(
         task=task,
-        llm="claude-sonnet-4-20250514",  # or "gpt-4o"
+        llm=get_llm(),
         browser=browser,
     )
 
@@ -102,7 +116,7 @@ async def quick_test():
 Report what you see."""
 
     browser = Browser(headless=False)
-    agent = Agent(task=task, llm="claude-sonnet-4-20250514", browser=browser)
+    agent = Agent(task=task, llm=get_llm(), browser=browser)
 
     result = await agent.run()
     print(result)
