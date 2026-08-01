@@ -86,33 +86,29 @@ Quick smoke test:
 
 Be concise. Report what works and what doesn't."""
     else:
-        task = """You are testing the Mon Comptoir POS app running in a WebView on an Android phone.
+        task = """You are testing the Mon Comptoir POS app on a FRESH install (Android WebView). It should show the license activation wizard (Étape 1/2).
 
-Explore the app thoroughly and find bugs:
+Test the complete fresh-install flow:
 
-1. Check the current screen — is it the license activation screen (Étape 1/2)?
-2. Try to activate the license:
-   - Fill the license key field with: MC-PRO-2026-DEMO-KEY
-   - Fill the store name field with: AI Test Store
-   - Click the Continue button
-3. If the terms screen appears (CGU), scroll to the bottom and accept
-4. Try to activate the license
-5. If you reach account creation, try creating user 'aitest' with password 'test1234'
-6. If you reach the login screen, try developer/dev12345
-7. Navigate to the Cashier (Caisse) and try to add a product
-8. Try to checkout
+1. Confirm you see the license activation screen (Étape 1/2 : Activer la licence) with two inputs (Clé de licence + Nom du magasin)
+2. Fill the license key field with: MC-PRO-2026-DEMO-KEY
+3. Fill the store name field with: AI Test Store
+4. Click the CONTINUE button (label: Continuer) — this advances to the CGU terms screen
+5. On the terms screen: SCROLL the terms box to the very bottom, then check the accept checkbox, then click ACTIVATE (label: Activer la licence)
+6. After activation, the app should show the SETUP screen (Étape 2/2 : Créer le compte) to create the first manager account:
+   - Username: aitest
+   - Password: test1234
+   - Confirm password: test1234
+   - Click create
+7. If you see a LOGIN screen instead of SETUP, that is a BUG — report it (fresh store should see setup wizard).
 
-For each step:
-- Take a screenshot
-- Note any errors, unexpected behavior, or UI issues
-- Check French text displays correctly
-- Check the layout works on mobile
+IMPORTANT button guidance:
+- The CONTINUE/ACTIVATE/create buttons are usually the last button in a form — look for the primary (indigo) button at the bottom.
+- Do NOT confuse the license-key quick buttons with submit. There are no quick buttons on the license screen.
+- After filling an input, verify the value stuck before proceeding.
+- If you get stuck, take a screenshot and describe what you see.
 
-Final report:
-- What works
-- What doesn't work
-- Any bugs found
-- List of screenshots taken"""
+For each step take a screenshot. Report what works, what doesn't, and any bugs found."""
 
     print("Starting AI agent...")
     print("It will navigate the app and report findings. This takes a few minutes.")
