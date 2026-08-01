@@ -253,7 +253,7 @@ export async function createLicenseKey(
 
 export async function updateLicenseKey(
   key: string,
-  action: "extend" | "cancel" | "reactivate",
+  action: "extend" | "cancel" | "reactivate" | "release",
   durationDays?: number
 ): Promise<{ success: boolean; license: LicenseKeyRow }> {
   const res = await authFetch(`${API_BASE}/license/keys/${key}`, {

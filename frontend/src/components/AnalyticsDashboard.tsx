@@ -35,6 +35,7 @@ import {
   Check,
   Eye,
   Link2,
+  Unlink,
   AlertTriangle,
 } from "lucide-react";
 
@@ -115,8 +116,11 @@ export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: 
     } catch { setNewKeyResult(t("createFailed")); }
   }
 
-  async function handleKeyAction(key: string, action: "extend" | "cancel" | "reactivate", days?: number) {
-    try { await updateLicenseKey(key, action, days); loadKeys(); } catch { /* ignore */ }
+  async function handleKeyAction(key: string, action: "extend" | "cancel" | "reactivate" | "release", days?: number) {
+    try {
+      if (action === "release" && !window.confirm("Lizenz vom aktuellen Gerät lösen? Der Kunde kann sie dann auf einem neuen Gerät aktivieren.")) return;
+      await updateLicenseKey(key, action, days); loadKeys();
+    } catch { /* ignore */ }
   }
 
   function openStoreDetail(storeId: number, _storeName: string) {
@@ -364,6 +368,11 @@ export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: 
                             <button onClick={() => handleKeyAction(k.license_key, "extend", 30)} title={t("extend30")} className="rounded p-1.5 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30">
                               <CalendarPlus className="h-4 w-4" />
                             </button>
+                            {k.store_name && (
+                              <button onClick={() => handleKeyAction(k.license_key, "release")} title="Vom Gerät lösen (Handywechsel)" className="rounded p-1.5 text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/30">
+                                <Unlink className="h-4 w-4" />
+                              </button>
+                            )}
                             <button onClick={() => handleKeyAction(k.license_key, "cancel")} title={t("cancelKey")} className="rounded p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30">
                               <Ban className="h-4 w-4" />
                             </button>
