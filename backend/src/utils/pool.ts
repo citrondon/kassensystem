@@ -9,7 +9,11 @@ dotenv.config();
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DB_SSL === "false" ? false : { rejectUnauthorized: false },
+      // SSL strikt verifizieren. Für Dienste ohne vertrauenswürdige CA
+      // (z.B. Render Free Postgres) explizit DB_SSL_INSECURE=true setzen.
+      ssl: process.env.DB_SSL === "false"
+        ? false
+        : { rejectUnauthorized: process.env.DB_SSL_INSECURE !== "true" },
     })
   : new Pool({
       user: process.env.DB_USER,

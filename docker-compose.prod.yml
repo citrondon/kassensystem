@@ -16,7 +16,8 @@ services:
       DB_SSL: "false"
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt (env-file)}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
-      CORS_ORIGIN: "true"
+      # Keine Cookies (Bearer-Token im Header) → "*" ist OK; APK-Origin ist http://localhost (Capacitor)
+      CORS_ORIGIN: "*"
     ports:
       - "${APP_PORT:-5000}:5000"
     volumes:

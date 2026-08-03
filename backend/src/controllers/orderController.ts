@@ -22,7 +22,7 @@ export interface CheckoutResult {
   changeAmount?: number;
 }
 
-export const processCheckout = async (payload: CheckoutPayload): Promise<CheckoutResult> => {
+export const processCheckout = async (payload: CheckoutPayload, userId?: number | null): Promise<CheckoutResult> => {
   const { items } = payload;
   const paymentMethod: PaymentMethod = payload.paymentMethod ?? "cash";
   const discountAmount = Math.max(0, payload.discountAmount ?? 0);
@@ -85,14 +85,15 @@ export const processCheckout = async (payload: CheckoutPayload): Promise<Checkou
     const changeAmount = paymentMethod === "cash" ? Math.max(0, finalAmountTendered - totalAmount) : 0;
 
     const orderResult = await client.query(
-      `INSERT INTO orders (total_amount, discount_amount, payment_method, amount_tendered, change_amount)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      `INSERT INTO orders (total_amount, discount_amount, payment_method, amount_tendered, change_amount, cashier_id)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
       [
         totalAmount.toFixed(2),
         discountAmount.toFixed(2),
         paymentMethod,
         finalAmountTendered.toFixed(2),
         changeAmount.toFixed(2),
+        userId ?? null,
       ]
     );
     const orderId = orderResult.rows[0].id;
@@ -130,6 +131,7 @@ export interface OrderListRow {
   payment_method: string;
   discount_amount: string;
   change_amount: string;
+  cashier_name: string | null;
 }
 
 export const getOrders = async (req: Request, res: Response): Promise<void> => {
@@ -140,10 +142,12 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
     const result = await pool.query<OrderListRow>(
       `SELECT o.id, o.order_date, o.total_amount, o.payment_method,
               o.discount_amount, o.change_amount,
+              cashier.username AS cashier_name,
               COUNT(oi.id) AS item_count
        FROM orders o
        LEFT JOIN order_items oi ON oi.order_id = o.id
-       GROUP BY o.id
+       LEFT JOIN users cashier ON cashier.id = o.cashier_id
+       GROUP BY o.id, cashier.username
        ORDER BY o.order_date DESC
        LIMIT $1 OFFSET $2`,
       [limit, offset]
@@ -164,6 +168,7 @@ export interface OrderDetailRow {
   amount_tendered: string;
   change_amount: string;
   status: string;
+  cashier_name: string | null;
   items: {
     id: number;
     product_id: number;
@@ -179,9 +184,12 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
 
   try {
     const orderResult = await pool.query(
-      `SELECT id, order_date, total_amount, discount_amount, payment_method,
-              amount_tendered, change_amount, status
-       FROM orders WHERE id = $1`,
+      `SELECT o.id, o.order_date, o.total_amount, o.discount_amount, o.payment_method,
+              o.amount_tendered, o.change_amount, o.status,
+              cashier.username AS cashier_name
+       FROM orders o
+       LEFT JOIN users cashier ON cashier.id = o.cashier_id
+       WHERE o.id = $1`,
       [id]
     );
 

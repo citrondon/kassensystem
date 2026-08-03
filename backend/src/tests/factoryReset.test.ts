@@ -86,6 +86,24 @@ describe("POST /api/auth/factory-reset", () => {
     expect(res.body.includeCashiers).toBe(true);
     expect(await countByRole("cashier")).toBe(0);
   });
+
+  // Setzt voraus, dass die vorherigen Tests dieser Datei keine Manager übrig gelassen
+  // haben (der globale Setup-Check braucht Manager-Anzahl = 0).
+  it("setup ignores a client-supplied X-Store-Id header", async () => {
+    const res = await request(app)
+      .post("/api/auth/setup")
+      .set("X-Store-Id", "999")
+      .send({ username: "setup_ignores_header", password: "password12345" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.username).toBe("setup_ignores_header");
+
+    // Beweis: Header wird ignoriert → store_id ist NULL, nicht 999
+    const rows = await pool.query(
+      `SELECT store_id FROM users WHERE username = 'setup_ignores_header'`
+    );
+    expect(rows.rows[0].store_id).toBeNull();
+  });
 });
 
 describe("Token error codes", () => {

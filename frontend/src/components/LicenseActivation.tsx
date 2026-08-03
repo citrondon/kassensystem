@@ -159,8 +159,10 @@ export default function LicenseActivation() {
             className="space-y-4"
           >
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("licenseKey")}</label>
+              <label htmlFor="licenseKey" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("licenseKey")}</label>
               <input
+                id="licenseKey"
+                name="licenseKey"
                 type="text"
                 value={licenseKey}
                 onChange={(e) => setLicenseKey(e.target.value)}
@@ -170,8 +172,10 @@ export default function LicenseActivation() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("storeName")}</label>
+              <label htmlFor="storeName" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("storeName")}</label>
               <input
+                id="storeName"
+                name="storeName"
                 type="text"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
@@ -230,6 +234,8 @@ export default function LicenseActivation() {
                 } ${!scrolledEnd ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
               >
                 <input
+                  id="termsAccepted"
+                  name="termsAccepted"
                   type="checkbox"
                   checked={accepted}
                   disabled={!scrolledEnd}

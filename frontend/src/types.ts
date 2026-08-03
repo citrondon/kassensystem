@@ -45,6 +45,7 @@ export interface OrderListItem {
   payment_method: string;
   discount_amount: string;
   change_amount: string;
+  cashier_name?: string | null;
 }
 
 export interface OrderDetailItem {
@@ -65,6 +66,7 @@ export interface OrderDetail {
   amount_tendered: string;
   change_amount: string;
   status: string;
+  cashier_name?: string | null;
   items: OrderDetailItem[];
 }
 

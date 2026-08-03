@@ -23,25 +23,20 @@ export default function SetupView() {
       return;
     }
 
-    if (password.length < 4) {
+    if (password.length < 10) {
       setError(t("passwordTooShort"));
       return;
     }
 
     setLoading(true);
     try {
-      // Get storeId from license info for per-store setup
-      let storeId: string | null = null;
-      try {
-        const info = localStorage.getItem("pos_license_info");
-        if (info) storeId = String(JSON.parse(info).storeId);
-      } catch {}
-
+      // storeId kommt serverseitig aus dem signierten Lizenz-Token
+      const licenseToken = localStorage.getItem("pos_license_token");
       const res = await fetch(`${API_BASE}/auth/setup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(storeId ? { "X-Store-Id": storeId } : {}),
+          ...(licenseToken ? { Authorization: `Bearer ${licenseToken}` } : {}),
         },
         body: JSON.stringify({ username, password }),
       });
@@ -80,7 +75,7 @@ export default function SetupView() {
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("username")}</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="input pl-10" required />
+              <input id="setupUsername" name="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="input pl-10" required />
             </div>
           </div>
 
@@ -88,7 +83,7 @@ export default function SetupView() {
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("password")}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input pl-10" required />
+              <input id="setupPassword" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input pl-10" required />
             </div>
           </div>
 
@@ -96,7 +91,7 @@ export default function SetupView() {
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("confirmPassword")}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="input pl-10" required />
+              <input id="setupConfirm" name="confirmPassword" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="input pl-10" required />
             </div>
           </div>
 

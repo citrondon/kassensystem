@@ -5,14 +5,16 @@ import { loginAs } from "./helpers.js";
 
 describe("GET /api/products", () => {
   it("returns demo products", async () => {
-    const res = await request(app).get("/api/products");
+    const { token } = await loginAs("cashier");
+    const res = await request(app).get("/api/products").set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
   });
 
   it("filters products by search term", async () => {
-    const res = await request(app).get("/api/products?searchTerm=Apfel");
+    const { token } = await loginAs("cashier");
+    const res = await request(app).get("/api/products?searchTerm=Apfel").set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.length).toBeGreaterThan(0);
     expect(res.body[0].name).toContain("Apfel");

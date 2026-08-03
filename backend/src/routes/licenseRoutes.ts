@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { requireDeveloper } from "../middleware/developerMiddleware.js";
+import { licenseLimiter } from "../middleware/rateLimit.js";
 import {
   activateLicense,
   verifyLicense,
@@ -12,9 +13,9 @@ import {
 
 const router = Router();
 
-// Public: activate + verify
-router.post("/activate", activateLicense);
-router.post("/verify", verifyLicense);
+// Public: activate + verify (rate-limited gegen Brute-Force/Key-Raten)
+router.post("/activate", licenseLimiter, activateLicense);
+router.post("/verify", licenseLimiter, verifyLicense);
 router.get("/status", getLicenseStatus);
 
 // Developer-only: license key management

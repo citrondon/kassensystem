@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { app } from "../server.js";
-import { loginAs } from "./helpers.js";
+import pool from "../utils/pool.js";
+import { loginAs, createTestProduct } from "./helpers.js";
 
 describe("POST /api/checkout", () => {
   it("rejects an unauthenticated request", async () => {
@@ -34,15 +35,13 @@ describe("POST /api/checkout", () => {
 
   it("rejects cash payment with insufficient tendered amount", async () => {
     const { token } = await loginAs("cashier");
-    const products = await request(app).get("/api/products");
-    const apple = products.body.find((p: { name: string }) => p.name === "Apfel");
-    expect(apple).toBeDefined();
+    const productId = await createTestProduct("Checkout-Produkt-1", 50);
 
     const res = await request(app)
       .post("/api/checkout")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        items: [{ productId: apple.id, quantity: 1 }],
+        items: [{ productId, quantity: 1 }],
         paymentMethod: "cash",
         amountTendered: 0.1,
       });
@@ -53,41 +52,46 @@ describe("POST /api/checkout", () => {
 
   it("processes a valid cash checkout with change", async () => {
     const { token } = await loginAs("cashier");
-    const products = await request(app).get("/api/products");
-    const apple = products.body.find((p: { name: string }) => p.name === "Apfel");
-    expect(apple).toBeDefined();
-
-    const before = apple.stock;
+    const productId = await createTestProduct("Checkout-Produkt-2", 50);
+    const stockBefore = Number(
+      (await pool.query(`SELECT stock FROM products WHERE id = $1`, [productId])).rows[0].stock
+    );
 
     const res = await request(app)
       .post("/api/checkout")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        items: [{ productId: apple.id, quantity: 1 }],
+        items: [{ productId, quantity: 1 }],
         paymentMethod: "cash",
-        amountTendered: 10,
+        amountTendered: 100000,
       });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.changeAmount).toBeGreaterThan(0);
 
-    const afterRes = await request(app).get(`/api/products?searchTerm=${apple.name}`);
-    const afterProduct = afterRes.body.find((p: { name: string }) => p.name === apple.name);
-    expect(afterProduct.stock).toBe(before - 1);
+    // Audit-Trail: Kassierer ist an der Bestellung festgehalten
+    const detailRes = await request(app)
+      .get(`/api/orders/${res.body.orderId}`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.cashier_name).toBe("testcashier");
+
+    const stockAfter = Number(
+      (await pool.query(`SELECT stock FROM products WHERE id = $1`, [productId])).rows[0].stock
+    );
+    expect(stockAfter).toBe(stockBefore - 1);
   });
 
   it("rejects a discount greater than the gross amount", async () => {
     const { token } = await loginAs("cashier");
-    const products = await request(app).get("/api/products");
-    const apple = products.body.find((p: { name: string }) => p.name === "Apfel");
-    expect(apple).toBeDefined();
+    const productId = await createTestProduct("Checkout-Produkt-3", 50);
 
     const res = await request(app)
       .post("/api/checkout")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        items: [{ productId: apple.id, quantity: 1 }],
+        items: [{ productId, quantity: 1 }],
         discountAmount: 100,
       });
 

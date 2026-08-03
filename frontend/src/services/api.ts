@@ -59,13 +59,13 @@ export async function getProducts(
 
   const qs = params.toString();
   const url = qs ? `${API_BASE}/products?${qs}` : `${API_BASE}/products`;
-  const res = await fetch(url);
+  const res = await authFetch(url, { headers: authHeaders() });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Produkte");
   return res.json();
 }
 
 export async function getCategories(): Promise<Category[]> {
-  const res = await fetch(`${API_BASE}/categories`);
+  const res = await authFetch(`${API_BASE}/categories`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Kategorien");
   return res.json();
 }
@@ -191,13 +191,13 @@ export async function checkout(
 }
 
 export async function getOrders(): Promise<OrderListItem[]> {
-  const res = await fetch(`${API_BASE}/orders`);
+  const res = await authFetch(`${API_BASE}/orders`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Bestellungen");
   return res.json();
 }
 
 export async function getOrderById(id: number): Promise<OrderDetail> {
-  const res = await fetch(`${API_BASE}/orders/${id}`);
+  const res = await authFetch(`${API_BASE}/orders/${id}`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Bestellung");
   return res.json();
 }

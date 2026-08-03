@@ -3,8 +3,16 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import pool from "../utils/pool.js";
 
-const LICENSE_JWT_SECRET = process.env.LICENSE_JWT_SECRET || process.env.JWT_SECRET || "license-fallback-secret";
-const TOKEN_TTL_DAYS = 7;
+// Kein hartcodiertes Fallback-Secret mehr. JWT_SECRET wird bereits beim Boot
+// (authController) erzwungen — hier zusätzlich explizit absichern.
+const licenseSecret = process.env.LICENSE_JWT_SECRET || process.env.JWT_SECRET;
+if (!licenseSecret) {
+  throw new Error("JWT_SECRET oder LICENSE_JWT_SECRET muss gesetzt sein.");
+}
+const LICENSE_JWT_SECRET: string = licenseSecret;
+// Kurze Token-Laufzeit: Online-Geräte re-verifizieren alle 4h; die Offline-Grace
+// nutzt das Lizenz-Ablaufdatum (JWT-Claim expiresAt), nicht die Token-Laufzeit.
+const TOKEN_TTL_DAYS = 1;
 
 export interface LicenseTokenPayload {
   licenseKey: string;
@@ -270,6 +278,13 @@ export const verifyLicense = async (req: Request, res: Response): Promise<void> 
     }
 
     const sub = subResult.rows[0];
+
+    // Gekündigte/gesperrte Lizenzen ablehnen — nicht erst bei Ablauf
+    if (sub.status === "cancelled" || sub.status === "suspended") {
+      res.status(403).json({ success: false, error: `Lizenz ist ${sub.status}.` });
+      return;
+    }
+
     const now = new Date();
     const expiresAt = new Date(sub.expires_at);
 

@@ -24,7 +24,8 @@ describe("App Version API", () => {
   });
 
   it("GET /api/app-version/download/:version rejects invalid chars", async () => {
-    const res = await request(app).get("/api/app-version/download/../../etc/passwd");
+    // supertest normalisiert "../" im Pfad → stattdessen Zeichen außerhalb [\w.-] testen
+    const res = await request(app).get("/api/app-version/download/v1.0!bad");
     expect(res.status).toBe(400);
   });
 });

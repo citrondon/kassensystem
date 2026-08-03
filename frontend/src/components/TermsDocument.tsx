@@ -249,12 +249,13 @@ function Section({
 }
 
 function P({ n, children }: { n: string; children: React.ReactNode }) {
+  // div statt p: Abschnitt 4.2 enthält <ul>-Listen, die in <p> ungültig wären
   return (
-    <p>
+    <div>
       <span className="font-semibold text-slate-800 dark:text-slate-200">
         {n}
       </span>{" "}
       {children}
-    </p>
+    </div>
   );
 }

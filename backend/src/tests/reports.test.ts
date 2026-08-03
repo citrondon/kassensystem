@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { app } from "../server.js";
-import { loginAs } from "./helpers.js";
+import { loginAs, createTestProduct } from "./helpers.js";
 
 describe("GET /api/reports/daily", () => {
   it("rejects unauthenticated request", async () => {
@@ -19,17 +19,15 @@ describe("GET /api/reports/daily", () => {
 
   it("returns report for today with correct structure", async () => {
     const { token: cashierToken } = await loginAs("cashier");
-    const products = await request(app).get("/api/products");
-    const apple = products.body.find((p: { name: string }) => p.name === "Apfel");
-    expect(apple).toBeDefined();
+    const productId = await createTestProduct("Report-Produkt-1", 50);
 
     await request(app)
       .post("/api/checkout")
       .set("Authorization", `Bearer ${cashierToken}`)
       .send({
-        items: [{ productId: apple.id, quantity: 2 }],
+        items: [{ productId, quantity: 2 }],
         paymentMethod: "cash",
-        amountTendered: 5,
+        amountTendered: 100000,
       });
 
     const { token: managerToken } = await loginAs("manager");
@@ -65,15 +63,13 @@ describe("GET /api/reports/top-products", () => {
 
   it("returns top products for today", async () => {
     const { token: cashierToken } = await loginAs("cashier");
-    const products = await request(app).get("/api/products");
-    const apple = products.body.find((p: { name: string }) => p.name === "Apfel");
-    expect(apple).toBeDefined();
+    const productId = await createTestProduct("Report-Produkt-2", 50);
 
     await request(app)
       .post("/api/checkout")
       .set("Authorization", `Bearer ${cashierToken}`)
       .send({
-        items: [{ productId: apple.id, quantity: 3 }],
+        items: [{ productId, quantity: 3 }],
         paymentMethod: "card",
       });
 
@@ -86,7 +82,7 @@ describe("GET /api/reports/top-products", () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
-    expect(res.body[0].product_name).toBe("Apfel");
+    expect(res.body[0].product_name).toBe("Report-Produkt-2");
     expect(Number(res.body[0].quantity_sold)).toBeGreaterThanOrEqual(3);
   });
 
@@ -110,17 +106,15 @@ describe("GET /api/reports/sales-over-time", () => {
 
   it("returns daily sales array for last 7 days", async () => {
     const { token: cashierToken } = await loginAs("cashier");
-    const products = await request(app).get("/api/products");
-    const apple = products.body.find((p: { name: string }) => p.name === "Apfel");
-    expect(apple).toBeDefined();
+    const productId = await createTestProduct("Report-Produkt-3", 50);
 
     await request(app)
       .post("/api/checkout")
       .set("Authorization", `Bearer ${cashierToken}`)
       .send({
-        items: [{ productId: apple.id, quantity: 1 }],
+        items: [{ productId, quantity: 1 }],
         paymentMethod: "cash",
-        amountTendered: 5,
+        amountTendered: 100000,
       });
 
     const { token: managerToken } = await loginAs("manager");
@@ -147,15 +141,13 @@ describe("GET /api/reports/peak-hours", () => {
 
   it("returns hourly breakdown for today", async () => {
     const { token: cashierToken } = await loginAs("cashier");
-    const products = await request(app).get("/api/products");
-    const apple = products.body.find((p: { name: string }) => p.name === "Apfel");
-    expect(apple).toBeDefined();
+    const productId = await createTestProduct("Report-Produkt-4", 50);
 
     await request(app)
       .post("/api/checkout")
       .set("Authorization", `Bearer ${cashierToken}`)
       .send({
-        items: [{ productId: apple.id, quantity: 1 }],
+        items: [{ productId, quantity: 1 }],
         paymentMethod: "card",
       });
 

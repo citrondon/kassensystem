@@ -21,6 +21,10 @@ services:
       - key: JWT_EXPIRES_IN
         value: "8h"
       - key: CORS_ORIGIN
+        value: "*"
+      # Render Free Postgres: keine vertrauenswürdige CA → expliziter SSL-Insecure-Opt-out
+      - key: DB_SSL_INSECURE
         value: "true"
+      # ACHTUNG: Zugangsdaten nicht im Repo committen — stattdessen Render Env-Gruppe/Secret verwenden
       - key: DATABASE_URL
-        value: postgresql://kassensystem_db_user:***@dpg-d9h4fukm0tmc73bqdl5g-a.frankfurt-postgres.render.com:5432/kassensystem_db
+        sync: false

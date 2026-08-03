@@ -11,13 +11,14 @@ import {
 } from "../controllers/authController.js";
 import { authenticate, requireManager } from "../middleware/authMiddleware.js";
 import { requireDeveloper } from "../middleware/developerMiddleware.js";
+import { authLimiter } from "../middleware/rateLimit.js";
 
 const router = Router();
 
 // Public
 router.get("/setup-status", getSetupStatus);
-router.post("/setup", setupOwner);
-router.post("/login", login);
+router.post("/setup", authLimiter, setupOwner);
+router.post("/login", authLimiter, login);
 router.get("/me", authenticate, getCurrentUser);
 
 // Manager/Developer only

@@ -9,13 +9,13 @@ import { authenticate } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.get("/", getOrders);
-router.get("/:id", getOrderById);
+router.get("/", authenticate, getOrders);
+router.get("/:id", authenticate, getOrderById);
 
 router.post("/", authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const payload = checkoutPayloadSchema.parse(req.body);
-    const result = await processCheckout(payload);
+    const result = await processCheckout(payload, req.user?.userId);
     res.status(200).json(result);
   } catch (error) {
     if (error && typeof error === "object" && "issues" in error && Array.isArray((error as { issues: unknown[] }).issues)) {

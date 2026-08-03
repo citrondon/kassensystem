@@ -51,7 +51,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-router.get("/", getProducts);
+router.get("/", authenticate, getProducts);
 router.post("/", authenticate, requireManager, validateBody(productCreateSchema), createProduct);
 router.put("/:id", authenticate, requireManager, validateBody(productUpdateSchema), updateProduct);
 router.delete("/:id", authenticate, requireManager, deleteProduct);

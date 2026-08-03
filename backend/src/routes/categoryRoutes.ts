@@ -5,7 +5,7 @@ import { getCategories, createCategory, deleteCategory } from "../controllers/ca
 const router = Router();
 
 // Public: list categories
-router.get("/", getCategories);
+router.get("/", authenticate, getCategories);
 
 // Manager-only: create + delete
 router.post("/", authenticate, requireManager, createCategory);

@@ -82,6 +82,12 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
               {formatDate(order.order_date)}
             </p>
 
+            {order.cashier_name && (
+              <p className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600">
+                {t("cashierName")}: {order.cashier_name}
+              </p>
+            )}
+
             <table className="w-full text-sm">
               <thead className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
                 <tr>

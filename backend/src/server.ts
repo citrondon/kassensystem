@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
@@ -10,6 +11,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import licenseRoutes from "./routes/licenseRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 import debugRoutes from "./routes/debugRoutes.js";
 import appVersionRoutes from "./routes/appVersionRoutes.js";
 import pool from "./utils/pool.js";
@@ -32,6 +34,21 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "*",
+  })
+);
+
+// Hinter Caddy (VPS) die echte Client-IP fürs Rate-Limiting verwenden
+const trustProxy = Number(process.env.TRUST_PROXY || 0);
+if (trustProxy > 0) {
+  app.set("trust proxy", trustProxy);
+}
+
+app.use(
+  helmet({
+    // CSP bewusst aus: Capacitor-WebView + QR-Scanner benötigen inline/Blob-Quellen
+    contentSecurityPolicy: false,
+    // APK lädt /uploads-Bilder cross-origin vom API-Server
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 app.use(express.json());
@@ -70,6 +87,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/license", licenseRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/reports", reportRoutes);
 app.use("/api/debug", debugRoutes);
 app.use("/api/app-version", appVersionRoutes);
 

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import pool from "../utils/pool.js";
+import { verifyLicenseToken } from "./licenseController.js";
 
 export interface UserRow {
   id: number;
@@ -20,8 +21,37 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET Umgebungsvariable muss gesetzt sein.");
 }
+
+// Platzhalter-Schutz: Beispiel-Secrets oder zu kurze Secrets ablehnen.
+// Produktion: harter Abbruch beim Start. Dev/Test: nur Warnung (nicht blockieren).
+const INSECURE_JWT_PLACEHOLDERS = [
+  "your-super-secret-jwt-key-change-in-production",
+  "change-me-long-random-string",
+];
+const isInsecureJwtSecret =
+  INSECURE_JWT_PLACEHOLDERS.includes(JWT_SECRET) || JWT_SECRET.length < 32;
+if (isInsecureJwtSecret) {
+  const message =
+    "JWT_SECRET ist unsicher (Platzhalter oder < 32 Zeichen). Bitte starkes Secret setzen: openssl rand -hex 32";
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(message);
+  }
+  console.warn(`[WARN] ${message}`);
+}
 // Token-Laufzeit per Env konfigurierbar (Default 8h, z.B. "8h", "24h", "7d")
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "8h") as jwt.SignOptions["expiresIn"];
+
+// storeId für den Setup-Flow kommt aus dem signierten Lizenz-Token
+// (nicht aus client-kontrollierten Headern wie X-Store-Id).
+function extractLicenseStoreId(req: Request): number | null {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  try {
+    return verifyLicenseToken(authHeader.slice(7)).storeId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   const { username, password } = req.body;
@@ -95,14 +125,16 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
 export const getSetupStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     // Per-store setup: check if a manager exists for this store.
-    // storeId comes from license token header (X-Store-Id) or query param.
-    const storeId = req.headers["x-store-id"] as string || req.query.storeId as string;
+    // storeId kommt aus dem signierten Lizenz-Token (Query-Param nur als Fallback).
+    const licenseStoreId = extractLicenseStoreId(req);
+    const queryStoreId = req.query.storeId as string | undefined;
+    const storeId = licenseStoreId ?? (queryStoreId ? Number(queryStoreId) : null);
 
     if (storeId) {
       // Per-store check: manager with this store_id
       const result = await pool.query(
         "SELECT COUNT(*) AS count FROM users WHERE role = 'manager' AND store_id = $1",
-        [Number(storeId)]
+        [storeId]
       );
       const managerCount = Number(result.rows[0].count);
       const needsSetup = managerCount === 0;
@@ -128,20 +160,20 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  if (password.length < 4) {
-    res.status(400).json({ success: false, error: "Passwort muss mindestens 4 Zeichen lang sein." });
+  if (password.length < 10) {
+    res.status(400).json({ success: false, error: "Manager-Passwort muss mindestens 10 Zeichen lang sein." });
     return;
   }
 
   try {
     // Allow setup if no manager exists for this store.
-    // storeId from license token header; if absent, use global check.
-    const storeId = req.headers["x-store-id"] as string;
+    // storeId kommt aus dem signierten Lizenz-Token — der X-Store-Id-Header wird ignoriert.
+    const storeId = extractLicenseStoreId(req);
 
     if (storeId) {
       const countResult = await pool.query(
         "SELECT COUNT(*) AS count FROM users WHERE role = 'manager' AND store_id = $1",
-        [Number(storeId)]
+        [storeId]
       );
       if (Number(countResult.rows[0].count) > 0) {
         res.status(403).json({ success: false, error: "Setup bereits abgeschlossen." });
@@ -159,7 +191,7 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
     const result = await pool.query<UserRow>(
       `INSERT INTO users (username, password_hash, role, store_id) VALUES ($1, $2, 'manager', $3)
        RETURNING id, username, role`,
-      [username, hash, storeId ? Number(storeId) : null]
+      [username, hash, storeId]
     );
 
     const user = result.rows[0];
@@ -174,7 +206,11 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
       token,
       user: { id: user.id, username: user.username, role: user.role },
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "23505") {
+      res.status(409).json({ success: false, error: "Benutzername bereits vergeben." });
+      return;
+    }
     console.error("Setup owner error:", error);
     res.status(500).json({ success: false, error: "Setup fehlgeschlagen." });
   }
@@ -202,12 +238,19 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  if (password.length < 4) {
-    res.status(400).json({ success: false, error: "Passwort muss mindestens 4 Zeichen lang sein." });
+  const userRole = role === "manager" ? "manager" : "cashier";
+
+  // Manager: starkes Passwort (>= 10); Kassierer: PIN-lang (>= 4)
+  const minPasswordLength = userRole === "manager" ? 10 : 4;
+  if (password.length < minPasswordLength) {
+    res.status(400).json({
+      success: false,
+      error: userRole === "manager"
+        ? "Manager-Passwort muss mindestens 10 Zeichen lang sein."
+        : "Passwort muss mindestens 4 Zeichen lang sein.",
+    });
     return;
   }
-
-  const userRole = role === "manager" ? "manager" : "cashier";
 
   try {
     const hash = await bcrypt.hash(password, 10);

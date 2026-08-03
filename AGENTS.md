@@ -269,3 +269,16 @@ Der Kunde öffnet den Link → Lizenz-Felder vorbefüllt → aktivieren → Mana
 5. **`/api/debug/status`** ist developer-only (JWT), nicht mehr öffentlich.
 6. **Geheimnisse:** `.env.production`, `provision.env`, `provisioned/` sind gitignored.
 7. **Render Free Postgres läuft zeitlich ab** — kein produktiver Kunde auf Render Free DB; der Docker-Stack ist der Exit-Pfad.
+
+### Backups (Pflicht)
+
+Jeder Kunden-Stack (Volume `pgdata`) muss regelmäßig gesichert werden. Cron-Job auf dem VPS:
+
+```bash
+# täglich 02:00 — pg_dump pro Kunden-Stack (KUNDE/Stack-Namen anpassen)
+0 2 * * * docker exec kassensystem-<KUNDE>-db-1 pg_dump -U posuser -d posdb | gzip > /backups/<KUNDE>-$(date +\%F).sql.gz
+```
+
+- Aufbewahrung: mind. 14 Tage (`find /backups -name '*.gz' -mtime +14 -delete`).
+- **Restore-Test** einmal im Monat (Backup einspielen + Healthcheck fahren).
+- `DB_SSL_INSECURE=true` nur für Dienste ohne vertrauenswürdige CA (z.B. Render Free Postgres); der VPS-Docker-Stack nutzt `DB_SSL=false` (Compose-intern kein SSL).
