@@ -119,7 +119,7 @@ router.get("/download/:version", (req, res) => {
 router.post("/upload", (req, res) => {
   if (!checkOtaKey(req, res)) return;
 
-  const { version, checksum } = req.body as { version?: string; checksum?: string };
+  const { version, checksum } = req.query as { version?: string; checksum?: string };
   if (!version || !/^[\w.-]+$/.test(version)) {
     res.status(400).json({ success: false, error: "Invalid version format" });
     return;
