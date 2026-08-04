@@ -113,9 +113,6 @@ export default function LoginView() {
         </form>
 
         <div className="mt-4 flex items-center justify-center gap-3">
-          <p className="text-center text-xs text-slate-400">
-            {t("loginDemoHint")}
-          </p>
           <LanguageSwitcher />
         </div>
 
