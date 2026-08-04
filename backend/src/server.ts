@@ -33,7 +33,19 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    // Explizite Origins (kommagetrennt) via CORS_ORIGIN. Capacitor-WebView
+    // (capacitor://localhost / https://localhost) und lokale Dev-Ursprünge
+    // werden IMMER erlaubt, sonst blockiert die APK den API-Zugriff.
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // no-origin Requests (curl, OTA-Scripte)
+      const allowed = process.env.CORS_ORIGIN?.split(",").map((s) => s.trim()).filter(Boolean) || [];
+      const ok =
+        origin.startsWith("capacitor://") ||
+        origin.startsWith("http://localhost") ||
+        origin.startsWith("https://localhost") ||
+        allowed.includes(origin);
+      callback(null, ok);
+    },
   })
 );
 
