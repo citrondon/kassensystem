@@ -10,6 +10,31 @@ function getCurrentVersion(): string {
   return localStorage.getItem(APP_VERSION_KEY) || BUILTIN_VERSION;
 }
 
+/**
+ * Echte aktive Version vom nativen OTA-Plugin ermitteln.
+ * Fallback: localStorage-Marker (Browser / Plugin nicht verfügbar).
+ * Sync: localStorage wird an die Realität angeglichen, damit der
+ * Version-Vergleich beim nächsten Start ehrlich bleibt.
+ */
+async function getActiveVersion(): Promise<string> {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const current = await CapacitorUpdater.current();
+      if (current.bundle && current.bundle.id && current.bundle.id !== "builtin") {
+        const v = current.bundle.version;
+        setCurrentVersion(v);
+        return v;
+      }
+      // builtin-Bundle: Marker zurücksetzen, damit ein Server-Update erneut angeboten wird
+      localStorage.removeItem(APP_VERSION_KEY);
+      return BUILTIN_VERSION;
+    }
+  } catch (err) {
+    console.warn("[OTA] current() failed, fallback to localStorage:", err);
+  }
+  return getCurrentVersion();
+}
+
 function setCurrentVersion(version: string): void {
   localStorage.setItem(APP_VERSION_KEY, version);
 }
@@ -67,7 +92,7 @@ export async function checkForOTAUpdate(): Promise<boolean> {
     const data: VersionInfo = await res.json();
     if (!data.success || !data.bundle) return false;
 
-    const currentVersion = getCurrentVersion();
+    const currentVersion = await getActiveVersion();
     if (data.version === currentVersion) return false;
 
     // Guard: skip if APK native version is below required minimum
@@ -102,7 +127,6 @@ export async function checkForOTAUpdate(): Promise<boolean> {
     // Set as next bundle
     await CapacitorUpdater.next({
       id: downloaded.id,
-      version: data.version,
     });
 
     setCurrentVersion(data.version);
@@ -125,6 +149,24 @@ export async function applyOTAUpdate(): Promise<void> {
     await CapacitorUpdater.reload();
   } catch (err) {
     console.error("[OTA] Reload failed:", err);
+  }
+}
+
+/**
+ * App-ready-Signal an das OTA-Plugin: markiert das aktuell aktive
+ * Bundle (falls ein OTA-Bundle läuft) als erfolgreich. Ohne diesen
+ * Aufruf fällt CapacitorUpdater nach dem App-Start auf das
+ * builtin-Bundle zurück (Rollback nach appReadyTimeout, default 10s).
+ * IMMER aufrufen — bei builtin ist der Aufruf harmlos.
+ * Sollte beim App-Start VOR dem Update-Check aufgerufen werden.
+ */
+export async function notifyAppReady(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    await CapacitorUpdater.notifyAppReady();
+    console.log("[OTA] notifyAppReady() ok");
+  } catch (err) {
+    console.warn("[OTA] notifyAppReady failed:", err);
   }
 }
 

@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LicenseProvider, useLicense } from "./contexts/LicenseContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { API_BASE } from "./services/api";
-import { checkForOTAUpdate, applyOTAUpdate, getAppVersionInfo } from "./services/ota";
+import { checkForOTAUpdate, applyOTAUpdate, getAppVersionInfo, notifyAppReady } from "./services/ota";
 import { RefreshCw } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
@@ -32,9 +32,18 @@ function AppContent() {
 
   // OTA update check on startup
   useEffect(() => {
-    checkForOTAUpdate().then((updated) => {
-      if (updated) setOtaReady(true);
-    });
+    let cancelled = false;
+    (async () => {
+      // Bundle-Erfolg zuerst bestätigen (verhindert Rollback auf builtin),
+      // dann Update-Check — Reihenfolge ist kritisch (appReadyTimeout 10s)
+      await notifyAppReady();
+      if (cancelled) return;
+      const updated = await checkForOTAUpdate();
+      if (updated && !cancelled) setOtaReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const appVersion = getAppVersionInfo();
