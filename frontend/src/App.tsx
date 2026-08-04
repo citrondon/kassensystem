@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LicenseProvider, useLicense } from "./contexts/LicenseContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { API_BASE } from "./services/api";
-import { checkForOTAUpdate, applyOTAUpdate, getAppVersionInfo, notifyAppReady } from "./services/ota";
+import { checkForOTAUpdate, applyOTAUpdate, notifyAppReady } from "./services/ota";
 import { RefreshCw } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
@@ -45,8 +45,6 @@ function AppContent() {
       cancelled = true;
     };
   }, []);
-
-  const appVersion = getAppVersionInfo();
 
   // Hash-based store detail navigation
   useEffect(() => {
@@ -139,7 +137,7 @@ function AppContent() {
           {view === "cashier" && <CashierInterface />}
           {view === "inventory" && <InventoryOverview />}
           {view === "orders" && <OrdersView />}
-          {view === "analytics" && <AnalyticsDashboard onSelectStore={(id, name) => { setSelectedStore({ id, name }); setView("store-detail"); }} />}
+          {view === "analytics" && <AnalyticsDashboard />}
           {view === "store-detail" && selectedStore && <StoreDetailView storeId={selectedStore.id} storeName={selectedStore.name} onBack={() => setView("analytics")} />}
         </main>
       </div>

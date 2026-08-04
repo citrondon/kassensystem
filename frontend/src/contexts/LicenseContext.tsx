@@ -41,8 +41,6 @@ function decodeJwtPayload(token: string): { expiresAt?: string; status?: string;
 //   Signatur-Wechsel. Kein Fehlalarm durch WebView-Update/Sprache/Rotation.
 // Web (Browser): Fingerprint-Fallback (kein ANDROID_ID verfügbar).
 
-let machineIdPromise: Promise<string> | null = null;
-
 function fingerprintMachineId(): string {
   const parts = [
     navigator.userAgent,

@@ -39,7 +39,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-export default function AnalyticsDashboard({ onSelectStore }: { onSelectStore?: (storeId: number, storeName: string) => void }) {
+export default function AnalyticsDashboard() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [bestsellers, setBestsellers] = useState<Bestseller[]>([]);

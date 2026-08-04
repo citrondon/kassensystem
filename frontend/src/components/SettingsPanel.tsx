@@ -4,6 +4,7 @@ import { getStoredToken } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import { API_BASE } from "../services/api";
 import { X, UserPlus, Trash2, Loader2, Tag, Plus } from "lucide-react";
+import { getActiveVersion } from "../services/ota";
 import { getCategories, createCategory, deleteCategory } from "../services/api";
 import { getCategoryLabel } from "../utils/categoryStyles";
 import type { Category } from "../types";
@@ -31,6 +32,18 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [catLoading, setCatLoading] = useState(false);
+
+  // App-Version (OTA-Bundle) anzeigen
+  const [appVersion, setAppVersion] = useState("…");
+  useEffect(() => {
+    let cancelled = false;
+    getActiveVersion().then((v) => {
+      if (!cancelled) setAppVersion(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -224,6 +237,10 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
             ))}
           </div>
         )}
+
+        <p className="mt-4 border-t border-slate-200 pt-3 text-center text-xs text-slate-400 dark:border-slate-700">
+          Version {appVersion}
+        </p>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ function getCurrentVersion(): string {
  * Sync: localStorage wird an die Realität angeglichen, damit der
  * Version-Vergleich beim nächsten Start ehrlich bleibt.
  */
-async function getActiveVersion(): Promise<string> {
+export async function getActiveVersion(): Promise<string> {
   try {
     if (Capacitor.isNativePlatform()) {
       const current = await CapacitorUpdater.current();

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import { API_BASE } from "../services/api";
 import LanguageSwitcher from "./LanguageSwitcher";
