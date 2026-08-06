@@ -1,28 +1,11 @@
-import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { AuthProvider, useAuth } from "./src/context/AuthContext";
-import PinLoginScreen from "./src/screens/PinLoginScreen";
 import CustomerBookScreen from "./src/screens/CustomerBookScreen";
 import DailySummaryScreen from "./src/screens/DailySummaryScreen";
 
 const Tab = createBottomTabNavigator();
 
-function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0f766e" />
-      </View>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <PinLoginScreen />;
-  }
-
+export default function App() {
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -49,15 +32,3 @@ function RootNavigator() {
     </NavigationContainer>
   );
 }
-
-export default function App() {
-  return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
-  );
-}
-
-const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f3f4f6" },
-});
