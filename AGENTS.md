@@ -231,7 +231,7 @@ cp .env.server.example .env.server   # Werte anpassen!
 docker compose --env-file .env.server -f docker-compose.server.yml up -d --build
 curl https://app.moncomptoir.bj/health   # {"status":"ok"}
 ```
-Caddy holt die Let's-Encrypt-Zertifikate automatisch, sobald DNS auf den Server zeigt. Die `mobile/`-APK ist aktuell rein offline (SQLite, keine API-Calls) und braucht den Server nicht.
+Caddy holt die Let's-Encrypt-Zertifikate automatisch, sobald DNS auf den Server zeigt. Die Handy-App ist die Capacitor-APK aus `frontend/` (Web-Build + `cap sync`), ein separates `mobile/`-Projekt existiert nicht mehr (entfernt 2026-08-06).
 
 ### Kunden-Stacks (Provisionierung)
 
