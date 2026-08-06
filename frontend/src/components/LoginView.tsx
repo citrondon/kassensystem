@@ -43,10 +43,7 @@ export default function LoginView() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-100">
-            <Lock className="h-7 w-7 text-indigo-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800">{t("appTitle")}</h1>
+          <img src="/lockup-v-hell.svg" alt="Mon Comptoir" className="mx-auto mb-4 h-28 w-auto" />
           <p className="text-slate-500">{t("login")}</p>
         </div>
 

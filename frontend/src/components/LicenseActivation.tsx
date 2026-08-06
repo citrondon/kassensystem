@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLicense } from "../contexts/LicenseContext";
 import { useI18n } from "../i18n/I18nContext";
-import { KeyRound, Loader2, WifiOff, AlertCircle, Store, Check, RotateCcw, ShieldCheck, FileText } from "lucide-react";
+import { KeyRound, Loader2, WifiOff, AlertCircle, Check, RotateCcw, ShieldCheck, FileText } from "lucide-react";
 import { TermsDocument, TERMS_VERSION } from "./TermsDocument";
 
 /**
@@ -140,10 +140,8 @@ export default function LicenseActivation() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-slate-900">
       <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-lg dark:border-slate-700 dark:bg-slate-800">
         <div className="flex flex-col items-center gap-2">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white">
-            <Store className="h-7 w-7" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("posSystem")}</h1>
+          <img src="/lockup-v-hell.svg" alt="Mon Comptoir" className="h-32 w-auto dark:hidden" />
+          <img src="/lockup-v-dunkel.svg" alt="Mon Comptoir" className="hidden h-32 w-auto rounded-2xl dark:block" />
           <WizardSteps current={1} />
         </div>
 

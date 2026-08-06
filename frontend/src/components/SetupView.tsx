@@ -3,7 +3,7 @@ import { useI18n } from "../i18n/I18nContext";
 import { API_BASE } from "../services/api";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { WizardSteps } from "./LicenseActivation";
-import { Store, User, Lock, Loader2 } from "lucide-react";
+import { User, Lock, Loader2 } from "lucide-react";
 
 export default function SetupView() {
   const { t } = useI18n();
@@ -59,9 +59,8 @@ export default function SetupView() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-slate-900">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg dark:bg-slate-800">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/40">
-            <Store className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
-          </div>
+          <img src="/lockup-v-hell.svg" alt="Mon Comptoir" className="mx-auto mb-4 h-28 w-auto dark:hidden" />
+          <img src="/lockup-v-dunkel.svg" alt="Mon Comptoir" className="mx-auto mb-4 hidden h-28 w-auto rounded-2xl dark:block" />
           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("setupTitle")}</h1>
           <p className="text-slate-500 dark:text-slate-400">{t("setupSubtitle")}</p>
           <div className="mt-3">
