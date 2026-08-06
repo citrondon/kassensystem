@@ -265,10 +265,9 @@ Der Kunde öffnet den Link → Lizenz-Felder vorbefüllt → aktivieren → Mana
 1. **Key-Spiegelung:** Die Kunden-Instanz aktiviert/verifiziert Lizenzen gegen ihre **eigene** `subscriptions`-Tabelle. Das Skript spiegelt den zentral erzeugten Key deshalb in die Kunden-DB. Der Zentralserver bleibt Master; **cancel/extend auf der Zentrale propagiert aktuell nicht** auf Kunden-Instanzen.
 2. **DB_SSL=false** ist im Prod-Compose gesetzt (Compose-interne Postgres kann kein SSL). Externe DBs mit SSL (Render): `DATABASE_URL` ohne `DB_SSL=false` → SSL bleibt an.
 3. **`JWT_EXPIRES_IN`** steuert die Token-Laufzeit (Default `8h`).
-4. **Factory-Reset** (`POST /api/auth/factory-reset`, developer-only) öffnet den Setup-Flow neu — kein Migration+Redeploy mehr nötig. Auch als Button im Dev-Panel (Analytics).
-5. **`/api/debug/status`** ist developer-only (JWT), nicht mehr öffentlich.
-6. **Geheimnisse:** `.env.production`, `provision.env`, `provisioned/` sind gitignored.
-7. **Render Free Postgres läuft zeitlich ab** — kein produktiver Kunde auf Render Free DB; der Docker-Stack ist der Exit-Pfad.
+4. **`/api/debug/status`** ist developer-only (JWT), nicht mehr öffentlich.
+5. **Geheimnisse:** `.env.production`, `provision.env`, `provisioned/` sind gitignored.
+6. **Render Free Postgres läuft zeitlich ab** — kein produktiver Kunde auf Render Free DB; der Docker-Stack ist der Exit-Pfad.
 
 ### Backups (Pflicht)
 

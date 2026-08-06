@@ -14,7 +14,6 @@ import {
   listLicenseKeys,
   createLicenseKey,
   updateLicenseKey,
-  factoryReset,
 } from "../services/api";
 import { useI18n } from "../i18n/I18nContext";
 import {
@@ -36,7 +35,6 @@ import {
   Eye,
   Link2,
   Unlink,
-  AlertTriangle,
 } from "lucide-react";
 
 export default function AnalyticsDashboard() {
@@ -56,7 +54,6 @@ export default function AnalyticsDashboard() {
   const [newKeyDays, setNewKeyDays] = useState(365);
   const [newKeyResult, setNewKeyResult] = useState("");
   const [copiedKey, setCopiedKey] = useState("");
-  const [factoryResetMsg, setFactoryResetMsg] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -139,21 +136,6 @@ export default function AnalyticsDashboard() {
     navigator.clipboard.writeText(link);
     setCopiedKey(`link:${key}`);
     setTimeout(() => setCopiedKey(""), 2000);
-  }
-
-  async function handleFactoryReset() {
-    if (!window.confirm(t("factoryResetConfirm"))) return;
-    setFactoryResetMsg("");
-    try {
-      const res = await factoryReset(false);
-      if (res.success) {
-        setFactoryResetMsg(t("factoryResetDone").replace("{count}", String(res.deletedCount ?? 0)));
-      } else {
-        setFactoryResetMsg(res.error || t("factoryResetFailed"));
-      }
-    } catch {
-      setFactoryResetMsg(t("factoryResetFailed"));
-    }
   }
 
   return (
@@ -391,22 +373,6 @@ export default function AnalyticsDashboard() {
             </table>
           </div>
         )}
-
-        {/* ── Factory Reset (developer-only, Demo/Test) ── */}
-        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
-              <AlertTriangle className="h-4 w-4" />
-              {t("factoryReset")}
-            </div>
-            <button onClick={handleFactoryReset} className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">
-              {t("factoryReset")}
-            </button>
-          </div>
-          {factoryResetMsg && (
-            <p className="mt-2 text-sm text-red-700 dark:text-red-300">{factoryResetMsg}</p>
-          )}
-        </div>
       </div>
     </div>
   );

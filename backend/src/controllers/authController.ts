@@ -275,34 +275,6 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 };
 
 /**
- * POST /api/auth/factory-reset
- * Developer-only. Deletes all manager accounts (optionally cashiers too via
- * body flag includeCashiers). Developer accounts are never touched.
- * Re-opens the setup flow (needsSetup = true) without migration/redeploy.
- */
-export const factoryReset = async (req: Request, res: Response): Promise<void> => {
-  const includeCashiers = req.body?.includeCashiers === true;
-
-  try {
-    const roles = includeCashiers ? ["manager", "cashier"] : ["manager"];
-    const result = await pool.query(
-      `DELETE FROM users WHERE role = ANY($1::text[]) RETURNING id`,
-      [roles]
-    );
-
-    res.json({
-      success: true,
-      deletedCount: result.rows.length,
-      includeCashiers,
-      needsSetup: true,
-    });
-  } catch (error) {
-    console.error("Factory reset error:", error);
-    res.status(500).json({ success: false, error: "Factory-Reset fehlgeschlagen." });
-  }
-};
-
-/**
  * DELETE /api/users/:id
  * Deletes a user. Self-deletion allowed (useful for factory reset).
  */

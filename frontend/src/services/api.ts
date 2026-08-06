@@ -264,19 +264,6 @@ export async function updateLicenseKey(
   return res.json();
 }
 
-// ── Factory Reset API (developer-only) ──
-
-export async function factoryReset(
-  includeCashiers = false
-): Promise<{ success: boolean; deletedCount?: number; needsSetup?: boolean; error?: string }> {
-  const res = await authFetch(`${API_BASE}/auth/factory-reset`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ includeCashiers }),
-  });
-  return res.json();
-}
-
 // ── Analytics API ──
 
 export async function getAnalyticsSummary(

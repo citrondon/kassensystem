@@ -7,7 +7,6 @@ import {
   listUsers,
   createUser,
   deleteUser,
-  factoryReset,
 } from "../controllers/authController.js";
 import { authenticate, requireManager } from "../middleware/authMiddleware.js";
 import { requireDeveloper } from "../middleware/developerMiddleware.js";
@@ -25,8 +24,5 @@ router.get("/me", authenticate, getCurrentUser);
 router.get("/users", authenticate, requireManager, listUsers);
 router.post("/users", authenticate, requireManager, createUser);
 router.delete("/users/:id", authenticate, requireManager, deleteUser);
-
-// Developer only: re-open setup flow (deletes manager accounts)
-router.post("/factory-reset", authenticate, requireDeveloper, factoryReset);
 
 export default router;
