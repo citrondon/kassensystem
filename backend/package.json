@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "migrate": "node ./scripts/migrate.cjs up",
     "migrate:down": "node ./scripts/migrate.cjs down",
-    "seed": "node ./scripts/seedUsers.cjs"
+    "seed": "node ./scripts/seedUsers.cjs",
+    "wipe:users": "node ./scripts/wipeUsers.cjs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

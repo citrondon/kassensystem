@@ -136,6 +136,7 @@ npm run test
 - `npm run migrate` – Migrationen anwenden
 - `npm run migrate:down` – Letzte Migration zurückrollen
 - `npm run seed` – Demo-Benutzer anlegen
+- `npm run wipe:users` – Lokaler Test-Reset: Manager/Kassierer löschen (Developer bleiben) → Setup-Flow öffnet sich neu. Läuft nur gegen localhost (außer mit `--force`).
 - `npm run test` – Backend-API-Tests ausführen
 
 **Frontend** (`cd frontend/`):
