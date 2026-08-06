@@ -13,10 +13,18 @@ if (!username || !password) {
   process.exit(1);
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DB_SSL === "false" ? false : { rejectUnauthorized: false },
-});
+const connectionString =
+  process.env.DATABASE_URL ||
+  `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+
+// SSL nur bei Remote-DB (DATABASE_URL gesetzt), lokale Docker-DB kann kein SSL
+const ssl = process.env.DATABASE_URL
+  ? process.env.DB_SSL === "false"
+    ? false
+    : { rejectUnauthorized: false }
+  : false;
+
+const pool = new Pool({ connectionString, ssl });
 
 async function main() {
   const hash = await bcrypt.hash(password, 10);
