@@ -77,16 +77,16 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
     >
       <div
         ref={modalRef}
-        className="mx-0 sm:mx-auto w-full sm:max-w-md max-h-[95dvh] sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
+        className="mx-0 sm:mx-auto w-full sm:max-w-md max-h-[95dvh] sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden dark:bg-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100">
+        <div className="flex shrink-0 items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
               <Receipt size={18} />
             </div>
-            <h2 className="text-lg font-bold text-slate-900">{t("payment")}</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t("payment")}</h2>
           </div>
           <button onClick={onClose} className="btn-icon" aria-label={t("close")}>
             <X size={20} />
@@ -95,9 +95,9 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-2 sm:px-6">
-          <div className="mb-3 max-h-32 overflow-y-auto space-y-1 rounded-xl bg-slate-50 p-3 text-sm">
+          <div className="mb-3 max-h-32 overflow-y-auto space-y-1 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-700/50">
             {cart.map((item) => (
-              <div key={item.id} className="flex justify-between text-slate-600">
+              <div key={item.id} className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span>
                   {item.quantity}x {item.name}
                 </span>
@@ -107,7 +107,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
           </div>
 
           <div className="mb-3">
-            <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">
               {t("payment")}
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -117,8 +117,8 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
                   onClick={() => setPaymentMethod(key)}
                   className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-xs sm:text-sm font-medium transition ${
                     paymentMethod === key
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
                   }`}
                 >
                   <Icon size={18} />
@@ -130,7 +130,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
 
           {paymentMethod === "cash" && (
             <div className="mb-3">
-              <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 {t("received")}
               </label>
               <div className="relative">
@@ -154,7 +154,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
                     key={bill}
                     type="button"
                     onClick={() => setAmountTendered(String((Number(amountTendered) || 0) + bill))}
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                   >
                     +{fmt(bill)}
                   </button>
@@ -162,7 +162,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
                 <button
                   type="button"
                   onClick={() => setAmountTendered(String(Math.ceil(total)))}
-                  className="rounded-lg border border-indigo-300 bg-indigo-50 px-2 py-1.5 text-xs sm:text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                  className="rounded-lg border border-indigo-300 bg-indigo-50 px-2 py-1.5 text-xs sm:text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
                 >
                   {t("toPay")}
                 </button>
@@ -181,7 +181,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
           )}
 
           <div className="mb-3">
-            <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">
               {t("discount")}
             </label>
             <div className="relative">
@@ -208,8 +208,8 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
             )}
           </div>
 
-          <div className="mb-2 space-y-1.5 rounded-xl bg-slate-50 p-3 text-sm">
-            <div className="flex justify-between text-slate-600">
+          <div className="mb-2 space-y-1.5 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-700/50">
+            <div className="flex justify-between text-slate-600 dark:text-slate-300">
               <span>{t("subtotal")}</span>
               <span>{fmt(subtotal)} {currency}</span>
             </div>
@@ -219,7 +219,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
                 <span>-{fmt(discountAmount)} {currency}</span>
               </div>
             )}
-            <div className="flex justify-between text-base font-bold text-slate-900">
+            <div className="flex justify-between text-base font-bold text-slate-900 dark:text-slate-100">
               <span>{t("toPay")}</span>
               <span>{fmt(total)} {currency}</span>
             </div>
@@ -227,7 +227,7 @@ export default function CheckoutModal({ cart, isOpen, onClose, onCheckout, isChe
         </div>
 
         {/* Sticky footer with checkout button */}
-        <div className="shrink-0 border-t border-slate-100 bg-white p-4 sm:p-6 sm:pt-4">
+        <div className="shrink-0 border-t border-slate-100 bg-white p-4 sm:p-6 sm:pt-4 dark:border-slate-700 dark:bg-slate-800">
           <button
             onClick={handleSubmit}
             disabled={!isValid || isCheckingOut}
