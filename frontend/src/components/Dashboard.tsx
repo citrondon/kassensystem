@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Product, OrderListItem } from "../types";
-import { getProducts, getOrders } from "../services/api";
+import { getProducts, getOrders, listUsers } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
+import OnboardingChecklist from "./OnboardingChecklist";
 import {
   TrendingUp,
   ShoppingBag,
@@ -22,10 +23,21 @@ interface Props {
 export default function Dashboard({ onNavigate }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<OrderListItem[]>([]);
+  const [cashierCount, setCashierCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const { t, lang } = useI18n();
   const { user } = useAuth();
   const isManager = user?.role === "manager";
+
+  // Kassierer-Anzahl für die Onboarding-Checkliste (nur Manager dürfen listUsers)
+  useEffect(() => {
+    if (!isManager) return;
+    listUsers()
+      .then((res) =>
+        setCashierCount(res.users.filter((u) => u.role === "cashier").length)
+      )
+      .catch(() => {});
+  }, [isManager]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -107,6 +119,15 @@ export default function Dashboard({ onNavigate }: Props) {
         <h1 className="text-2xl font-bold text-slate-800">{t("dashboard")}</h1>
         <p className="text-slate-500">{t("overview")}</p>
       </div>
+
+      {!loading && isManager && (
+        <OnboardingChecklist
+          productsCount={products.length}
+          ordersCount={orders.length}
+          cashierCount={cashierCount}
+          onNavigate={onNavigate}
+        />
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-20">

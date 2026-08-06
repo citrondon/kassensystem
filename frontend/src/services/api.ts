@@ -13,6 +13,7 @@ import {
   StoreSummary,
   Bestseller,
   TrendPoint,
+  User,
 } from "../types";
 import { getStoredToken } from "../contexts/AuthContext";
 import { getStoredLicenseToken } from "../contexts/LicenseContext";
@@ -199,6 +200,14 @@ export async function getOrders(): Promise<OrderListItem[]> {
 export async function getOrderById(id: number): Promise<OrderDetail> {
   const res = await authFetch(`${API_BASE}/orders/${id}`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Fehler beim Abrufen der Bestellung");
+  return res.json();
+}
+
+// ── User API ──
+
+export async function listUsers(): Promise<{ success: boolean; users: User[] }> {
+  const res = await authFetch(`${API_BASE}/auth/users`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Fehler beim Abrufen der Benutzer");
   return res.json();
 }
 
