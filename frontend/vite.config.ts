@@ -13,6 +13,11 @@ export default defineConfig({
         target: "http://localhost:5000",
         changeOrigin: true,
       },
+      // Produktbilder kommen im Dev-Betrieb ebenfalls vom Backend
+      "/uploads": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+      },
     },
   },
   build: {

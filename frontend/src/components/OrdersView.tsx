@@ -68,10 +68,10 @@ export default function OrdersView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-800">{t("orders")}</h1>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("orders")}</h1>
         <button
           onClick={load}
-          className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
         >
           <RefreshCw className="h-4 w-4" />
           {t("refresh")}
@@ -89,7 +89,7 @@ export default function OrdersView() {
             {/* Desktop: table */}
             <div className="overflow-x-auto hidden lg:block">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
                   <tr>
                     <th className="px-5 py-3">{t("order")}</th>
                     <th className="px-5 py-3">{t("date")}</th>
@@ -98,23 +98,23 @@ export default function OrdersView() {
                     <th className="px-5 py-3"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-700/60">
                   {orders.map((order) => (
-                    <tr key={order.id} className="transition hover:bg-slate-50/50">
-                      <td className="px-5 py-3 font-semibold text-slate-800">#{order.id}</td>
-                      <td className="px-5 py-3 text-slate-600">
+                    <tr key={order.id} className="transition hover:bg-slate-50/50 dark:hover:bg-slate-700/40">
+                      <td className="px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">#{order.id}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">
                         {formatDate(order.order_date)}
                       </td>
-                      <td className="px-5 py-3 text-right text-slate-600">
+                      <td className="px-5 py-3 text-right text-slate-600 dark:text-slate-300">
                         {order.item_count}
                       </td>
-                      <td className="px-5 py-3 text-right font-bold text-slate-800">
+                      <td className="px-5 py-3 text-right font-bold text-slate-800 dark:text-slate-100">
                         {fmt(Number(order.total_amount))} {currency}
                       </td>
                       <td className="px-5 py-3 text-right">
                         <button
                           onClick={() => setSelectedId(order.id)}
-                          className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                          className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           {t("details")}
@@ -127,19 +127,19 @@ export default function OrdersView() {
             </div>
 
             {/* Mobile: cards */}
-            <div className="divide-y divide-slate-50 lg:hidden">
+            <div className="divide-y divide-slate-50 dark:divide-slate-700/60 lg:hidden">
               {orders.map((order) => (
                 <button
                   key={order.id}
                   onClick={() => setSelectedId(order.id)}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50/50"
+                  className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50/50 dark:hover:bg-slate-700/40"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-800">#{order.id} · {order.item_count} {t("piece")}</p>
-                    <p className="text-xs text-slate-500">{formatDate(order.order_date)}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">#{order.id} · {order.item_count} {t("piece")}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(order.order_date)}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800">{fmt(Number(order.total_amount))} {currency}</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">{fmt(Number(order.total_amount))} {currency}</span>
                     <Eye className="h-4 w-4 text-slate-400" />
                   </div>
                 </button>

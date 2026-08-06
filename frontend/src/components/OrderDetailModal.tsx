@@ -48,19 +48,19 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Receipt className="h-6 w-6 text-indigo-600" />
-            <h2 className="text-xl font-bold text-slate-800">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
               {t("order")} #{orderId}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200"
             aria-label={t("close")}
           >
             <X className="h-5 w-5" />
@@ -78,18 +78,18 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
 
         {order && (
           <div>
-            <p className="mb-4 text-sm font-medium text-slate-500">
+            <p className="mb-4 text-sm font-medium text-slate-500 dark:text-slate-400">
               {formatDate(order.order_date)}
             </p>
 
             {order.cashier_name && (
-              <p className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600">
+              <p className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 dark:bg-slate-700/50 dark:text-slate-300">
                 {t("cashierName")}: {order.cashier_name}
               </p>
             )}
 
             <table className="w-full text-sm">
-              <thead className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
+              <thead className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:text-slate-400">
                 <tr>
                   <th className="py-2 text-left">{t("product")}</th>
                   <th className="py-2 text-right">{t("quantity")}</th>
@@ -97,17 +97,17 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
                   <th className="py-2 text-right">{t("total")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/60">
                 {order.items.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-2 font-semibold text-slate-800">
+                    <td className="py-2 font-semibold text-slate-800 dark:text-slate-100">
                       {item.product_name}
                     </td>
                     <td className="py-2 text-right">{item.quantity}</td>
                     <td className="py-2 text-right">
                       {fmt(Number(item.unit_price))} {currency}
                     </td>
-                    <td className="py-2 text-right font-bold text-slate-800">
+                    <td className="py-2 text-right font-bold text-slate-800 dark:text-slate-100">
                       {fmt(Number(item.line_total))} {currency}
                     </td>
                   </tr>
@@ -115,14 +115,14 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
               </tbody>
             </table>
 
-            <div className="mt-4 flex justify-between border-t border-slate-100 pt-3 text-lg font-extrabold text-slate-900">
+            <div className="mt-4 flex justify-between border-t border-slate-100 pt-3 text-lg font-extrabold text-slate-900 dark:border-slate-700 dark:text-slate-100">
               <span>{t("total")}</span>
               <span>{fmt(Number(order.total_amount))} {currency}</span>
             </div>
 
             <button
               onClick={onClose}
-              className="mt-4 w-full rounded-xl bg-slate-100 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-200"
+              className="mt-4 w-full rounded-xl bg-slate-100 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
             >
               {t("close")}
             </button>

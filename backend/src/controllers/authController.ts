@@ -218,11 +218,17 @@ export const setupOwner = async (req: Request, res: Response): Promise<void> => 
 
 // ── User Management (manager/developer only) ──
 
-export const listUsers = async (_req: Request, res: Response): Promise<void> => {
+export const listUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await pool.query(
-      `SELECT id, username, role, created_at FROM users ORDER BY id ASC`
-    );
+    // Developer-Accounts sind intern — Manager sehen sie nicht in der Benutzerübersicht.
+    const result =
+      req.user?.role === "developer"
+        ? await pool.query(
+            `SELECT id, username, role, created_at FROM users ORDER BY id ASC`
+          )
+        : await pool.query(
+            `SELECT id, username, role, created_at FROM users WHERE role <> 'developer' ORDER BY id ASC`
+          );
     res.json({ success: true, users: result.rows });
   } catch (error) {
     console.error("List users error:", error);
