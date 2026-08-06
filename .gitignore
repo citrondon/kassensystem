@@ -12,3 +12,11 @@ provisioned/
 uploads/
 uploads_test/
 __pycache__/
+
+# Lokale Debug-/Arbeitsdateien (nicht committen!)
+firebase-debug.log
+vps_*.py
+apk_*.png
+CLAUDE_FABLE5_PROMPT.*
+frontend/.ota-upload-meta
+frontend/ota-tmp-release.zip
