@@ -3,7 +3,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { getStoredToken } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
 import { API_BASE } from "../services/api";
-import { X, UserPlus, Trash2, Loader2, Tag, Plus } from "lucide-react";
+import { X, UserPlus, Trash2, Loader2, Tag, Plus, Languages } from "lucide-react";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { getActiveVersion } from "../services/ota";
 import { getCategories, createCategory, deleteCategory } from "../services/api";
 import { getCategoryLabel } from "../utils/categoryStyles";
@@ -137,6 +138,14 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{t("settings")}</h2>
           <button onClick={onClose} className="btn-icon"><X className="h-5 w-5" /></button>
+        </div>
+
+        {/* Sprache — aus dem Header hierher verlagert, damit oben Platz bleibt */}
+        <div className="mb-6 flex items-center justify-between rounded-lg bg-slate-50 p-4 dark:bg-slate-900/50">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+            <Languages className="h-4 w-4" />{t("language")}
+          </h3>
+          <LanguageSwitcher />
         </div>
 
         <div className="mb-6 rounded-lg bg-slate-50 p-4 dark:bg-slate-900/50">

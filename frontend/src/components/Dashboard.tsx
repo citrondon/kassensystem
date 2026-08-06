@@ -116,8 +116,8 @@ export default function Dashboard({ onNavigate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">{t("dashboard")}</h1>
-        <p className="text-slate-500">{t("overview")}</p>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t("dashboard")}</h1>
+        <p className="text-slate-500 dark:text-slate-400">{t("overview")}</p>
       </div>
 
       {!loading && isManager && (
@@ -139,14 +139,14 @@ export default function Dashboard({ onNavigate }: Props) {
             <button
               key={card.label}
               onClick={card.onClick}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:shadow-md active:scale-95 sm:gap-4 sm:p-5"
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:shadow-md active:scale-95 sm:gap-4 sm:p-5 dark:border-slate-700 dark:bg-slate-800"
             >
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.bg} sm:h-12 sm:w-12`}>
                 {card.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-slate-500 sm:text-sm">{card.label}</p>
-                <p className="text-base font-bold text-slate-800 sm:text-xl">{card.value}</p>
+                <p className="text-xs font-medium text-slate-500 sm:text-sm dark:text-slate-400">{card.label}</p>
+                <p className="text-base font-bold text-slate-800 sm:text-xl dark:text-slate-100">{card.value}</p>
               </div>
               <ArrowRight className="h-5 w-5 text-slate-300" />
             </button>
@@ -157,7 +157,7 @@ export default function Dashboard({ onNavigate }: Props) {
       {!loading && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="panel p-5">
-            <h2 className="mb-4 text-lg font-bold text-slate-800">{t("quickAccess")}</h2>
+            <h2 className="mb-4 text-lg font-bold text-slate-800 dark:text-slate-100">{t("quickAccess")}</h2>
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => onNavigate("cashier")}
@@ -177,21 +177,21 @@ export default function Dashboard({ onNavigate }: Props) {
           </div>
 
           <div className="panel p-5">
-            <h2 className="mb-4 text-lg font-bold text-slate-800">{t("lastOrders")}</h2>
+            <h2 className="mb-4 text-lg font-bold text-slate-800 dark:text-slate-100">{t("lastOrders")}</h2>
             {orders.length === 0 ? (
               <p className="text-center text-sm text-slate-400 py-4">{t("noOrdersYet")}</p>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {orders.slice(0, 5).map((order) => (
                   <li
                     key={order.id}
                     className="flex items-center justify-between py-3"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                         {t("order")} #{order.id}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {new Date(order.order_date).toLocaleString(lang === "fr" ? "fr-FR" : "de-DE", {
                           day: "2-digit",
                           month: "2-digit",
@@ -201,7 +201,7 @@ export default function Dashboard({ onNavigate }: Props) {
                         })}
                       </p>
                     </div>
-                    <span className="text-sm font-bold text-slate-800">
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
                       {fmt(Number(order.total_amount))} {currency}
                     </span>
                   </li>

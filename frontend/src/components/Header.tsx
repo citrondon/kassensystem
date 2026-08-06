@@ -1,6 +1,5 @@
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../i18n/I18nContext";
-import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import { LogOut, User, Settings } from "lucide-react";
 
@@ -36,13 +35,13 @@ export default function Header({ onOpenSettings }: Props) {
             </button>
           )}
           <ThemeToggle />
-          <LanguageSwitcher />
           <button
             onClick={logout}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+            title={t("logout")}
           >
             <LogOut className="h-4 w-4" />
-            {t("logout")}
+            <span className="hidden sm:inline">{t("logout")}</span>
           </button>
         </div>
       </div>
